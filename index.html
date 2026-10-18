@@ -141,7 +141,7 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .roll-in{position:relative}
 .roll .bar{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
 .roll .bar.first{background:transparent}
-.blk{position:absolute;height:40px;border-radius:5px;padding:2px 5px;font-size:.78rem;line-height:1.2;overflow:hidden;white-space:nowrap;border:1px solid transparent}
+.blk{position:absolute;height:40px;border-radius:5px;padding:2px 4px;font-size:.78rem;line-height:1.2;overflow:hidden;white-space:nowrap;border:1px solid transparent}
 .blk.R{background:var(--felt-soft);border-color:color-mix(in srgb, var(--felt) 35%, transparent);color:var(--ink)}
 .blk.L{background:var(--brass-soft);border-color:color-mix(in srgb, var(--brass) 35%, transparent);color:var(--ink)}
 .blk .f{display:block;color:var(--muted);font-size:.72rem;font-variant-numeric:tabular-nums}
@@ -245,8 +245,11 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .kb{position:relative;display:flex;height:118px;user-select:none;-webkit-user-select:none;touch-action:none}
 #fall{display:block;width:100%;background:var(--paper)}
 .dock.stage .felt{height:6px;border-radius:0}
+.pane details,.pane .card,.lesson{scroll-margin-top:64px}
 .stage-bar{display:flex;flex-direction:column;gap:6px;padding-block:2px 8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
-.stage-bar select{max-width:min(320px,100%)}
+.stage-bar select{flex:1 1 240px;min-width:0;max-width:520px;font-weight:600;text-overflow:ellipsis}
+.dock.stage{max-height:100vh;max-height:100dvh;overflow-y:auto}
+@media (max-height:520px){.dock.stage .kb{height:90px}.stage-bar{gap:4px;padding-bottom:4px;margin-bottom:4px}.stage-bar .ctrls{gap:4px 6px}.stage-bar select{padding:4px 8px}.stage-bar .seg button{padding:4px 8px}.stage-bar .btn{padding:4px 9px}.fl-status{font-size:.82rem}}
 .fl-status{font-size:.92rem;font-weight:600;min-height:1.35em}
 .fl-status.good{color:var(--ok)}
 .dock.small .kb{height:96px}
@@ -314,7 +317,7 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
 .tapbtn[disabled]{opacity:.45}
 .tapbtn.flash{background:var(--felt);color:var(--card)}
 .bigq{font-size:1.1rem;font-weight:600}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(170px + env(safe-area-inset-bottom, 0px));background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:.9rem;z-index:40;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top, 0px));background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:.9rem;z-index:40;max-width:calc(100% - 32px)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -1165,23 +1168,24 @@ function makePlayer(ex,host){
   chk.addEventListener('change',()=>p.metro=chk.checked);
   if(two) $('[data-a=hand]',root).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;p.filter=b.dataset.v;$$('[data-a=hand] button',root).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));p.renderRoll();});
   p.evs=()=>ex.events.filter(e=>!e.rest&&(p.filter==='all'||e.hand===p.filter));
+  p.px=Math.max(PX,Math.ceil(38/Math.min(...ex.events.map(e=>e.d))));  // nốt ngắn nhất vẫn đủ chỗ ghi tên + ngón
   p.renderRoll=()=>{
     const inn=$('.roll-in',root), rows=['R','L'].filter(h=>ex.hands.includes(h));
-    const W=ex.total*PX+16, H=rows.length*48+8; inn.style.width=W+'px'; inn.style.height=H+'px';
+    const W=ex.total*p.px+16, H=rows.length*48+8; inn.style.width=W+'px'; inn.style.height=H+'px';
     let h='';
-    for(let b=ex.pickup;b<=ex.total+0.001;b+=ex.beats) h+=`<i class="bar" style="left:${8+b*PX}px"></i>`;
+    for(let b=ex.pickup;b<=ex.total+0.001;b+=ex.beats) h+=`<i class="bar" style="left:${8+b*p.px}px"></i>`;
     ex.events.forEach((e,i)=>{
-      const r=rows.indexOf(e.hand), top=4+r*48, left=8+e.t*PX, w=Math.max(10,e.d*PX-3);
+      const r=rows.indexOf(e.hand), top=4+r*48, left=8+e.t*p.px, w=Math.max(10,e.d*p.px-3);
       if(e.rest){ h+=`<div class="blk rest" style="left:${left}px;width:${w}px;top:${top}px" title="Dấu lặng">nghỉ</div>`; return; }
       const name=e.label|| e.notes.map(nmShort).join('·');
       const fg=e.fing.length?e.fing.join('·'):'';
       const mute=p.filter!=='all'&&e.hand!==p.filter?' mute':'';
-      h+=`<div class="blk ${e.hand}${mute}" data-i="${i}" style="left:${left}px;width:${w}px;top:${top}px" title="${esc(e.notes.map(m=>nm(m,'sol')+' / '+nm(m,'abc')).join(', '))}${fg?' · ngón '+fg:''}">${esc(name)}<span class="f">${fg?'ngón '+fg:''}</span></div>`;
+      h+=`<div class="blk ${e.hand}${mute}" data-i="${i}" style="left:${left}px;width:${w}px;top:${top}px" title="${esc(e.notes.map(m=>nm(m,'sol')+' / '+nm(m,'abc')).join(', '))}${fg?' · ngón '+fg:''}">${esc(name)}<span class="f">${fg?(w>=58?'ngón ':'')+fg:''}</span></div>`;
     });
     inn.innerHTML=h;
   };
   const roll=$('.roll',root);
-  const scrollTo=t=>{const x=8+t*PX; if(x<roll.scrollLeft+20||x>roll.scrollLeft+roll.clientWidth-90) roll.scrollLeft=Math.max(0,x-40);};
+  const scrollTo=t=>{const x=8+t*p.px; if(x<roll.scrollLeft+20||x>roll.scrollLeft+roll.clientWidth-90) roll.scrollLeft=Math.max(0,x-40);};
   const mark=(e,on)=>{const i=ex.events.indexOf(e); const b=$(`.blk[data-i="${i}"]`,root); if(b) b.classList.toggle('now',on); if(on) scrollTo(e.t);};
   $('[data-a=nghe]',root).addEventListener('click',()=>{
     stopAll(); const evs=p.evs(); if(!evs.length) return;
@@ -1864,7 +1868,7 @@ function fallColors(){ const cs=getComputedStyle(document.documentElement), g=k=
 function fallGeo(){ F.geo.clear(); keyEls.forEach((k,m)=>F.geo.set(m,[k.offsetLeft,k.offsetWidth,k.classList.contains('b')])); }
 function sizeFall(){
   const cv=$('#fall'); if(cv.hidden) return;
-  const other=$('#dock').offsetHeight-cv.offsetHeight, H=Math.round(Math.max(170,Math.min(480,window.innerHeight-other-20)));
+  const other=$('#dock').scrollHeight-cv.offsetHeight, H=Math.round(Math.max(window.innerHeight<560?110:150,Math.min(480,window.innerHeight-other-12)));
   const W=$('#kbcol').clientWidth, dpr=window.devicePixelRatio||1;
   cv.style.height=H+'px'; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
   F.W=W; F.H=H; F.dpr=dpr; fallGeo(); fitDock(); fallDraw();
@@ -1965,10 +1969,11 @@ function fallDraw(){
     if(n.r&&n.r.st===1) fill=C.ok; if(n.r&&n.r.st===2) alpha=0.35;
     x.globalAlpha=alpha; x.fillStyle=fill; x.beginPath(); if(x.roundRect) x.roundRect(rx,top,rw,h,5); else x.rect(rx,top,rw,h); x.fill();
     if(blk){ x.strokeStyle=C.ink; x.lineWidth=1.5; x.stroke(); }
-    if(n.sel&&h>18&&rw>13){ x.fillStyle=C.card; x.textAlign='center'; x.textBaseline='alphabetic';
+    const vTop=Math.max(top,0), vBot=Math.min(top+h,H), vh=vBot-vTop; // chỉ ghi chữ trong phần khối đang thấy
+    if(n.sel&&vh>18&&rw>13){ x.fillStyle=C.card; x.textAlign='center'; x.textBaseline='alphabetic';
       const fs=Math.max(9,Math.min(13,rw*0.4)); x.font=`600 ${fs}px "Be Vietnam Pro", sans-serif`;
-      x.fillText(labelMode==='abc'?ABC[n.m%12]:SOL[n.m%12],rx+rw/2,top+h-5);
-      if(n.f&&h>38){ x.font=`700 ${fs+1}px "Be Vietnam Pro", sans-serif`; x.fillText(n.f,rx+rw/2,top+h-5-fs-5); } }
+      x.fillText(labelMode==='abc'?ABC[n.m%12]:SOL[n.m%12],rx+rw/2,vBot-5);
+      if(n.f&&vh>38){ x.font=`700 ${fs+1}px "Be Vietnam Pro", sans-serif`; x.fillText(n.f,rx+rw/2,vBot-5-fs-5); } }
   });
   x.globalAlpha=1;
   // hiệu ứng khi bấm
@@ -1982,7 +1987,7 @@ function fallDraw(){
     x.font='700 34px "Be Vietnam Pro", sans-serif'; x.fillText(big,cx,H*0.42); if(small){ x.font='500 14px "Be Vietnam Pro", sans-serif'; x.fillStyle=C.muted; x.fillText(small,cx,H*0.42+28); } };
   if(F.result) mid(F.result.stars?'★'.repeat(F.result.stars)+'☆'.repeat(3-F.result.stars):'Xong bài!',F.result.stars?'':'');
   else if(F.run&&F.now<0) mid(String(Math.ceil(-F.now)),'đếm vào…');
-  else if(!F.run&&F.now<=-F.ci+0.001) mid('Sẵn sàng?','bấm Bắt đầu');
+  else if(!F.run&&F.now<=-F.ci+0.001) mid('Sẵn sàng?',F.ex.ten+' · bấm Bắt đầu');
   else if(!F.run) mid('Tạm dừng','bấm Tiếp tục');
 }
 function bindFall(){
@@ -2000,6 +2005,8 @@ function bindFall(){
   $('#fl-restart').addEventListener('click',()=>fallReset());
   $('#fl-exit').addEventListener('click',closeFall);
   window.addEventListener('resize',()=>{ if(F.on) sizeFall(); });
+  // thanh điều khiển cao lên (chữ trạng thái xuống dòng, phông tải xong) thì thu khung nốt rơi lại cho vừa màn hình
+  if(window.ResizeObserver){ let lastH=0; new ResizeObserver(()=>{ const h=$('#stage-bar').offsetHeight; if(F.on&&h&&h!==lastH){ lastH=h; sizeFall(); } }).observe($('#stage-bar')); }
   document.addEventListener('visibilitychange',()=>{ if(document.hidden&&F.run){ F.run=false; fallUi(); } });
   $('#t-fall').addEventListener('click',()=>{ const l=curLesson(); if(l.exs.length) openFall(l.exs[0]); });
 }
