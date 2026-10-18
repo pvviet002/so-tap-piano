@@ -246,6 +246,27 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 #fall{display:block;width:100%;background:var(--paper)}
 .dock.stage .felt{height:6px;border-radius:0}
 .pane details,.pane .card,.lesson{scroll-margin-top:64px}
+/* Ngón tay cần bấm: số ngón trên phím + hình hai bàn tay */
+.k .fb{position:absolute;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:50%;font:700 13px/22px var(--f-body);text-align:center;color:var(--card);z-index:3;pointer-events:none;box-shadow:0 0 0 2px var(--ivory)}
+.k.w .fb{bottom:24px}
+.k.b .fb{bottom:6px;box-shadow:0 0 0 2px var(--ebony)}
+.fb.R{background:var(--felt)} .fb.L{background:var(--brass)}
+.handbar{display:flex;align-items:center;gap:8px;padding:2px 0 6px}
+.handbar .sp{flex:1}
+.handbar svg{height:64px;width:auto;flex:none;overflow:visible}
+.hcap{flex:1;font-size:.8rem;color:var(--muted);line-height:1.35;min-width:0}
+.hcap b{white-space:nowrap}
+.hcap b{display:block;font-size:.88rem}
+.hcap.R b{color:var(--felt)} .hcap.L b{color:var(--brass)}
+.hcap.R{text-align:right}
+.hcap span{color:var(--ink);font-weight:600}
+.hand .fg,.hand .palm{stroke:var(--muted);stroke-width:1.6}
+.hand .fg{fill:var(--card)} .hand .palm{fill:var(--paper)}
+.hand .n{font:700 12px var(--f-body);fill:var(--muted);text-anchor:middle;dominant-baseline:central}
+.hand.R .fg.on{fill:var(--felt);stroke:var(--felt)} .hand.L .fg.on{fill:var(--brass);stroke:var(--brass)}
+.hand .n.on{fill:var(--card);font-size:14px}
+@media (min-height:820px){.handbar svg{height:84px}}
+@media (max-height:520px){.handbar{display:none!important}}
 .stage-bar{display:flex;flex-direction:column;gap:6px;padding-block:2px 8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
 .stage-bar select{flex:1 1 240px;min-width:0;max-width:520px;font-weight:600;text-overflow:ellipsis}
 .dock.stage{max-height:100vh;max-height:100dvh;overflow-y:auto}
@@ -692,6 +713,12 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       </div>
       <div class="fl-status" id="fl-status"></div>
     </div>
+    <div class="handbar" id="handbar" hidden aria-live="polite">
+      <svg class="hand L" id="hand-L" role="img" aria-label="Bàn tay trái"></svg>
+      <div class="hcap L" id="hcap-L"><b>Tay trái</b><span></span></div>
+      <div class="hcap R" id="hcap-R"><b>Tay phải</b><span></span></div>
+      <svg class="hand R" id="hand-R" role="img" aria-label="Bàn tay phải"></svg>
+    </div>
     <div class="kbwrap" id="kbwrap"><div class="kbcol" id="kbcol"><canvas id="fall" hidden aria-label="Nốt rơi xuống phím"></canvas><div class="felt"></div><div class="kb" id="kb"></div></div></div>
   </div>
 </div>
@@ -796,6 +823,7 @@ function renderKeyLabels(){
     if(labelMode!=='an') h+=`<span class="${m%12===0?'on':''}">${labelMode==='abc'?ABC[m%12]+(Math.floor(m/12)-1):SOL[m%12]}</span>`;
     k.innerHTML=h;
   });
+  if(FING.size) fingDraw(); // đổi kiểu tên phím thì vẽ lại số ngón
 }
 const held=new Map(); const sustained=new Set(); let pedal=false;
 function noteOn(m){
@@ -813,6 +841,35 @@ function setPedal(on){
   pedal=on; $('#kb-pedal').setAttribute('aria-pressed',on?'true':'false');
   if(!on){ sustained.forEach(v=>releaseVoice(v)); sustained.clear(); }
 }
+/* ---------- Ngón tay cần bấm: số ngón trên phím + hình hai bàn tay ---------- */
+// Nhìn từ trên xuống mu bàn tay đặt trên phím: tay phải ngón cái (1) bên trái, tay trái ngón cái bên phải.
+const HAND_F=[[2,36,12,15],[3,53,5,15],[4,70,10,15],[5,86,22,13]]; // ngón, tâm x, đỉnh y, bề rộng
+function handSVG(h){
+  const mx=x=>h==='L'?96-x:x, g=h==='L'?' transform="translate(96,0) scale(-1,1)"':'';
+  let s=`<g${g}>`;
+  HAND_F.forEach(([f,cx,top,w])=>{ s+=`<rect class="fg" data-f="${f}" x="${cx-w/2}" y="${top}" width="${w}" height="${58-top}" rx="${w/2}"/>`; });
+  s+=`<rect class="fg" data-f="1" x="-8" y="-30" width="16" height="34" rx="8" transform="translate(27,62) rotate(-42)"/>`;
+  s+=`<rect class="palm" x="25" y="42" width="70" height="38" rx="15"/></g>`;
+  HAND_F.forEach(([f,cx,top])=>{ s+=`<text class="n" data-f="${f}" x="${mx(cx)}" y="${top+10}">${f}</text>`; });
+  s+=`<text class="n" data-f="1" x="${mx(12)}" y="45">1</text>`;
+  return s;
+}
+const FING=new Map(); // phím -> {m, hand, f}
+const evFing=e=>e.hand?e.notes.map((m,k)=>({m,hand:e.hand,f:e.fing[k]||''})):[];
+function fingSet(list){ FING.clear(); fingAdd(list); }
+function fingAdd(list){ list.forEach(x=>{ if(x.hand) FING.set(x.m,x); }); fingDraw(); }
+function fingDel(ms){ ms.forEach(m=>FING.delete(m)); fingDraw(); }
+function fingDraw(){
+  $$('#kb .fb').forEach(b=>b.remove());
+  const on={R:[],L:[]};
+  FING.forEach(x=>{ const k=keyEls.get(x.m); if(k){ const b=document.createElement('span'); b.className='fb '+x.hand; b.textContent=x.f; k.appendChild(b); } on[x.hand].push(x); });
+  ['R','L'].forEach(h=>{ const fs=new Set(on[h].map(x=>x.f));
+    $$('#hand-'+h+' .fg, #hand-'+h+' .n').forEach(el=>el.classList.toggle('on',fs.has(el.dataset.f)));
+    $('#hcap-'+h+' span').textContent=on[h].sort((a,b)=>a.m-b.m).map(x=>(x.f?'ngón '+x.f+' → ':'')+nm(x.m,'sol')).join(', '); });
+  handbarSync();
+}
+function handbarSync(){ const hb=$('#handbar'), show=F.on||!!(act&&act.player); if(hb.hidden===show){ hb.hidden=!show; fitDock(); } }
+function buildHands(){ $('#hand-L').setAttribute('viewBox','-4 0 104 82'); $('#hand-R').setAttribute('viewBox','-4 0 104 82'); $('#hand-L').innerHTML=handSVG('L'); $('#hand-R').innerHTML=handSVG('R'); setInterval(handbarSync,300); }
 function flashKey(m,cls,ms){const k=keyEls.get(m); if(!k) return; k.classList.add(cls); setTimeout(()=>k.classList.remove(cls),ms||380)}
 function ensureVisible(m){
   const k=keyEls.get(m), w=$('#kbwrap'); if(!k||w.scrollWidth<=w.clientWidth) return;
@@ -1124,7 +1181,7 @@ const PX=46; let act=null; const players=[];
 function stopAll(msg){
   if(!act) return; const a=act; act=null;
   a.timeouts.forEach(clearTimeout); a.voices.forEach(v=>releaseVoice(v,true));
-  $$('.k.hint,.k.play').forEach(k=>k.classList.remove('hint','play'));
+  $$('.k.hint,.k.play').forEach(k=>k.classList.remove('hint','play')); fingSet([]);
   if(a.player){ $$('.blk.now',a.player.root).forEach(b=>b.classList.remove('now')); a.player.setStatus(msg||''); a.player.syncButtons(); }
   if(a.onStop) a.onStop();
 }
@@ -1139,10 +1196,10 @@ function runEvents(events,bpm,o){
     const ts=t0+lead+e.t*spb, dur=e.d*spb;
     e.notes.forEach(m=>st.voices.push(scheduleNote(m,ts,dur,e.vel)));
     const ms=(ts-a.currentTime)*1000;
-    st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('play');}); if(e.notes[0]) ensureVisible(e.notes[0]); o.onEvent&&o.onEvent(e,true); },ms));
-    st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.remove('play');}); o.onEvent&&o.onEvent(e,false); },ms+dur*1000-25));
+    st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('play');}); fingAdd(evFing(e)); if(e.notes[0]) ensureVisible(e.notes[0]); o.onEvent&&o.onEvent(e,true); },ms));
+    st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.remove('play');}); fingDel(e.notes); o.onEvent&&o.onEvent(e,false); },ms+dur*1000-25));
   });
-  st.timeouts.push(setTimeout(()=>{ if(act===st){ act=null; o.onEnd&&o.onEnd(); } },(lead+end*spb)*1000+250));
+  st.timeouts.push(setTimeout(()=>{ if(act===st){ act=null; fingSet([]); o.onEnd&&o.onEnd(); } },(lead+end*spb)*1000+250));
   return st;
 }
 function makePlayer(ex,host){
@@ -1211,14 +1268,14 @@ function makePlayer(ex,host){
     const show=()=>{
       $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now'));
       const s=steps[st.i]; s.req.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('hint');}); ensureVisible([...s.req][0]);
-      s.es.forEach(e=>mark(e,true));
+      s.es.forEach(e=>mark(e,true)); fingSet(s.es.flatMap(evFing));
       const fg=s.es.flatMap(e=>e.fing); p.setStatus(`Bước ${st.i+1}/${steps.length}: bấm ${[...s.req].map(m=>nm(m,'sol')).join(' + ')}${fg.length?' (ngón '+fg.join('·')+')':''} · sai ${st.err}`);
     };
     st.onNote=m=>{
       const s=steps[st.i];
-      if(s.req.has(m)){ st.got.add(m); const k=keyEls.get(m); if(k) k.classList.remove('hint');
+      if(s.req.has(m)){ st.got.add(m); const k=keyEls.get(m); if(k) k.classList.remove('hint'); fingDel([m]);
         if([...s.req].every(x=>st.got.has(x))){ st.got=new Set(); st.i++;
-          if(st.i>=steps.length){ const e=st.err; act=null; $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now')); p.syncButtons();
+          if(st.i>=steps.length){ const e=st.err; act=null; fingSet([]); $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now')); p.syncButtons();
             p.setStatus(e===0?'Xuất sắc! Không sai nốt nào. Thử tăng tốc độ hoặc chơi trên đàn thật.':`Xong cả bài, sai ${e} nốt. Chơi lại một lần nữa nhé.`, e===0); if(e===0) chime(); return; }
           show(); }
       } else { st.err++; flashKey(m,'bad'); s.req.forEach(x=>flashKey(x,'good',500)); show(); }
@@ -1879,13 +1936,14 @@ function sizeFall(){
   cv.style.height=H+'px'; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
   F.W=W; F.H=H; F.dpr=dpr; fallGeo(); fitDock(); fallDraw();
 }
-function setHints(s){ F.hints.forEach(m=>{ if(!s.has(m)){ const k=keyEls.get(m); if(k) k.classList.remove('hint'); } }); s.forEach(m=>{ const k=keyEls.get(m); if(k) k.classList.add('hint'); }); F.hints=s; }
+function setHints(s){ F.hints.forEach(m=>{ if(!s.has(m)){ const k=keyEls.get(m); if(k) k.classList.remove('hint'); } }); s.forEach(m=>{ const k=keyEls.get(m); if(k) k.classList.add('hint'); }); F.hints=s;
+  fingSet([...s].map(m=>{ let best=null; F.req.forEach(r=>{ if(r.m===m&&r.st===0&&(!best||Math.abs(r.t-F.now)<Math.abs(best.t-F.now))) best=r; }); return best?{m,hand:best.hand,f:best.f}:null; }).filter(Boolean)); }
 function fallSel(e){ return F.filter==='all'||e.hand===F.filter; }
 function fallReset(){
   const ex=F.ex; F.run=false; F.done=false; F.wait=false; F.err=0; F.ok=0; F.perfect=0; F.si=0; F.got=new Set(); F.ai=0; F.fx=[]; F.result=null; F.last=0;
   F.ci=ex.beats===8?4:ex.beats; F.now=-F.ci; F.notes=[]; F.req=[];
   ex.events.forEach(e=>{ if(e.rest) return; const sel=fallSel(e), req=F.mode!=='that'&&sel;
-    e.notes.forEach((m,k)=>{ const n={t:e.t,d:e.d,m,f:e.fing[k]||'',hand:e.hand,sel,r:null}; if(req){ n.r={t:e.t,m,st:0}; F.req.push(n.r); } F.notes.push(n); }); });
+    e.notes.forEach((m,k)=>{ const n={t:e.t,d:e.d,m,f:e.fing[k]||'',hand:e.hand,sel,r:null}; if(req){ n.r={t:e.t,m,st:0,hand:e.hand,f:e.fing[k]||''}; F.req.push(n.r); } F.notes.push(n); }); });
   F.auto=ex.events.filter(e=>!e.rest&&(F.mode==='that'||!fallSel(e))).sort((a,b)=>a.t-b.t);
   F.steps=[...new Set(F.req.map(r=>r.t))].sort((a,b)=>a-b).map(t=>({t,req:F.req.filter(r=>r.t===t)}));
   setHints(new Set()); fallUi(); fallDraw();
@@ -1897,10 +1955,10 @@ function openFall(ex){
   $('#fl-song').value=String(FALL_EX.findIndex(x=>x.ex===ex));
   F.bpm=Math.max(30,Math.round(ex.bpm*0.8)); $('#fl-bpm').value=F.bpm; $('#fl-bpm-v').textContent=F.bpm;
   F.filter='all'; setSeg('#fl-hand','all'); $('#fl-hand').hidden=ex.hands.length<2;
-  fallColors(); fallReset(); requestAnimationFrame(sizeFall);
+  fallColors(); fallReset(); handbarSync(); requestAnimationFrame(sizeFall);
   if(!F.raf){ F.last=0; F.raf=requestAnimationFrame(fallLoop); }
 }
-function closeFall(){ if(!F.on) return; F.on=false; F.run=false; setHints(new Set()); $('#stage-bar').hidden=true; $('#fall').hidden=true; $('#dock').classList.remove('stage'); fitDock(); }
+function closeFall(){ if(!F.on) return; F.on=false; F.run=false; setHints(new Set()); $('#stage-bar').hidden=true; $('#fall').hidden=true; $('#dock').classList.remove('stage'); handbarSync(); fitDock(); }
 function fallUi(){
   $('#fl-go').textContent=F.run?'Tạm dừng':F.done?'Chơi lại từ đầu':F.now>-F.ci+0.001?'Tiếp tục':'Bắt đầu';
   $('#fl-sound-l').hidden=F.mode!=='that';
@@ -1951,7 +2009,7 @@ function fallLoop(ts){
     for(let b=Math.floor(prev)+1;b<=Math.floor(next);b++){ if(b<0) click(audio().currentTime,false); else if(F.metro) click(audio().currentTime,((b-(F.ex.pickup||0))%F.ex.beats+F.ex.beats)%F.ex.beats===0); }
     while(F.ai<F.auto.length&&F.auto[F.ai].t<=F.now){ const e=F.auto[F.ai++], dur=e.d*60/F.bpm;
       if(F.mode!=='that'||F.sound) e.notes.forEach(m=>scheduleNote(m,audio().currentTime,dur,F.mode==='that'?0.9:0.6));
-      if(F.mode==='that'&&fallSel(e)) e.notes.forEach(m=>{ flashKey(m,'play',Math.max(160,dur*1000-40)); ensureVisible(m); }); }
+      if(F.mode==='that'&&fallSel(e)){ e.notes.forEach(m=>{ flashKey(m,'play',Math.max(160,dur*1000-40)); ensureVisible(m); }); fingAdd(evFing(e)); setTimeout(()=>fingDel(e.notes),Math.max(160,dur*1000-40)); } }
     if(F.mode==='theo'){ let ch=false; const h=new Set();
       F.req.forEach(r=>{ if(r.st===0&&F.now>r.t+0.45){ r.st=2; ch=true; } if(r.st===0&&r.t-F.now<=0.35) h.add(r.m); });
       const same=h.size===F.hints.size&&[...h].every(m=>F.hints.has(m)); if(!same) setHints(h); if(ch) fallUi(); }
@@ -2134,7 +2192,7 @@ $('#t-open').addEventListener('click',()=>{ const l=curLesson(); setTab('lotrinh
 const _emit=emit;
 emit=function(m){ if(recorderHook&&curTab==='lotrinh'&&!(act&&act.kind==='practice')) recorderHook(m); _emit(m); };
 $('#t-lt-open').addEventListener('click',e=>openTheory(+e.currentTarget.dataset.n||1));
-buildKeyboard(); bindKeyboard(); buildRoadmap(); buildTheory(); buildChords(); bindFall(); bindMic(); bindMetro(); bindTimer(); bindLog(); buildChecks();
+buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildTheory(); buildChords(); bindFall(); bindMic(); bindMetro(); bindTimer(); bindLog(); buildChecks();
 const lvSel=$('#g-level'); LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i;o.textContent=lv.ten;lvSel.appendChild(o);});
 lvSel.value=G.lv; lvSel.addEventListener('change',()=>setLevel(lvSel.value)); $('#g-reset').addEventListener('click',()=>setLevel(G.lv));
 renderAnswers(); nextQ(); renderGame();
