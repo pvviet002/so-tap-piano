@@ -1021,7 +1021,7 @@ const L=[
   dat:'Đạt khi: bốn nốt móc đơn đều như tiếng đồng hồ ở nhịp 80.',
   ph:'Bài này hát được thành canon (vòng tròn): em đàn, phụ huynh hát đuổi sau hai ô nhịp.',
   ex:[{ten:'Kìa con bướm vàng, hai tay',bpm:72,rh:'C4:1 D4:2 E4:3 C4:1 C4:1 D4:2 E4:3 C4:1 E4:3 F4:4 G4/2:5 E4:3 F4:4 G4/2:5 G4/0.5:4 A4/0.5:5 G4/0.5:4 F4/0.5:3 E4:2 C4:1 G4/0.5:4 A4/0.5:5 G4/0.5:4 F4/0.5:3 E4:2 C4:1 C4:1 G3:1 C4/2:1 C4:1 G3:1 C4/2:1',
-      lh:Array(8).fill('C3+E3+G3/4=C').join(' ')}]},
+      lh:Array(6).fill('C3+E3+G3/4=C').concat(Array(2).fill('C3+E3/4=C')).join(' ')}]}, // hai ô cuối tay phải xuống Sol thấp nên tay trái bỏ Sol
  {n:15,ten:'Auld Lang Syne',sub:'Bài hát chia tay năm cũ, hai tay',goal:'Chơi bài có phách đón và nhiều nhịp "dài – ngắn".',
   buoc:['Bài bắt đầu bằng một nốt Sol thấp ở phách đón, trước ô nhịp 1.',
         'Gần như ô nhịp nào cũng mở đầu bằng "dài – ngắn" (một phách rưỡi + nửa phách).',
@@ -1030,7 +1030,7 @@ const L=[
   dat:'Đạt khi: hai tay trọn bài ở 72.',
   ph:'Bài chậm, êm. Khuyến khích em chơi nhẹ tay, không đập phím.',
   ex:[{ten:'Auld Lang Syne, hai tay',bpm:66,pickup:1,rh:'G3:1 C4/1.5:1 C4/0.5:1 C4:1 E4:3 D4/1.5:2 C4/0.5:1 D4:2 E4:3 C4/1.5:1 C4/0.5:1 E4:3 G4:5 A4/3:5 A4:5 G4/1.5:5 E4/0.5:3 E4:3 C4:1 D4/1.5:2 C4/0.5:1 D4:2 E4:3 C4/1.5:4 A3/0.5:2 A3:2 G3:1 C4/3:4',
-      lh:'-/1 '+[cC,cG7,cC,cF,cC,cG7,cF].join(' ')+' C3+E3+G3/3=C'}]},
+      lh:'-/1 '+[cC,cG7,cC,cF,cC,cG7,'C3+F3/4:5,2=F'].join(' ')+' C3+E3+G3/3=C'}]}, // tay phải xuống La thấp nên hợp âm Fa bỏ La
  {n:16,ten:'Für Elise, đoạn đầu',sub:'Beethoven, hai tay luân phiên',goal:'Chơi đoạn mở đầu nổi tiếng, hai tay nối tiếp nhau.',
   buoc:['Có phím đen: Rê♯ (ngay bên phải Rê) và Sol♯. Ngón 4 tay phải bấm Rê♯.',
         'Mi – Rê♯ lặp lại: bàn tay đứng yên, chỉ ngón 5 và 4 nhún.',
@@ -1171,11 +1171,17 @@ function makePlayer(ex,host){
   p.px=Math.max(PX,Math.ceil(38/Math.min(...ex.events.map(e=>e.d))));  // nốt ngắn nhất vẫn đủ chỗ ghi tên + ngón
   p.renderRoll=()=>{
     const inn=$('.roll-in',root), rows=['R','L'].filter(h=>ex.hands.includes(h));
-    const W=ex.total*p.px+16, H=rows.length*48+8; inn.style.width=W+'px'; inn.style.height=H+'px';
+    // một tay có hai bè ngân cùng lúc (vd Prelude in C) thì mỗi bè một làn, không vẽ chồng lên nhau
+    const lane=new Map(), nl={}, rowTop={}; let y=4;
+    rows.forEach(hd=>{ const ends=[];
+      ex.events.filter(e=>e.hand===hd&&!e.rest).sort((a,b)=>a.t-b.t).forEach(e=>{ let k=ends.findIndex(x=>x<=e.t+1e-6); if(k<0){ k=ends.length; ends.push(0); } ends[k]=e.t+e.d; lane.set(e,k); });
+      nl[hd]=Math.max(1,ends.length); rowTop[hd]=y; y+=nl[hd]*48; });
+    const W=ex.total*p.px+16, H=y+4; inn.style.width=W+'px'; inn.style.height=H+'px';
     let h='';
     for(let b=ex.pickup;b<=ex.total+0.001;b+=ex.beats) h+=`<i class="bar" style="left:${8+b*p.px}px"></i>`;
     ex.events.forEach((e,i)=>{
-      const r=rows.indexOf(e.hand), top=4+r*48, left=8+e.t*p.px, w=Math.max(10,e.d*p.px-3);
+      if(e.rest&&nl[e.hand]>1) return; // dấu lặng của bè trong: bỏ, kẻo che nốt bè kia
+      const k=lane.get(e)||0, top=rowTop[e.hand]+(nl[e.hand]-1-k)*48, left=8+e.t*p.px, w=Math.max(10,e.d*p.px-3);
       if(e.rest){ h+=`<div class="blk rest" style="left:${left}px;width:${w}px;top:${top}px" title="Dấu lặng">nghỉ</div>`; return; }
       const name=e.label|| e.notes.map(nmShort).join('·');
       const fg=e.fing.length?e.fing.join('·'):'';
