@@ -228,7 +228,7 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 
 /* Cây đàn ảo dính dưới đáy */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.06);padding-bottom:env(safe-area-inset-bottom, 0px)}
-.dock-in{max-width:1000px;margin:0 auto;padding-left:max(10px, env(safe-area-inset-left, 0px));padding-right:max(10px, env(safe-area-inset-right, 0px));padding-block:6px 8px}
+.dock-in{max-width:1300px;margin:0 auto;padding-left:max(10px, env(safe-area-inset-left, 0px));padding-right:max(10px, env(safe-area-inset-right, 0px));padding-block:6px 8px}
 .dock-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.85rem;margin-bottom:6px}
 .dock-bar .lbl{font-weight:600}
 .dock-bar .keys-hint{color:var(--muted);font-size:.78rem}
@@ -241,7 +241,7 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .pedal[aria-pressed="true"]{background:var(--brass);color:var(--card);border-color:var(--brass)}
 .kbwrap{overflow-x:auto;overscroll-behavior-x:contain;border-radius:0 0 6px 6px}
 .felt{height:4px;background:var(--felt);border-radius:2px 2px 0 0}
-.kbcol{min-width:calc(24 * 26px);position:relative}
+.kbcol{min-width:calc(52 * 24px);position:relative}
 .kb{position:relative;display:flex;height:118px;user-select:none;-webkit-user-select:none;touch-action:none}
 #fall{display:block;width:100%;background:var(--paper)}
 .dock.stage .felt{height:6px;border-radius:0}
@@ -797,7 +797,8 @@ function click(t,acc){
 function chime(){const a=audio(),t=a.currentTime+0.02;scheduleNote(79,t,0.5);scheduleNote(84,t+0.18,0.9)}
 
 /* ---------- Đàn ảo ---------- */
-const LO=40, HI=79; // Mi2 → Sol5
+const LO=21, HI=108; // đủ 88 phím như KR-570: La0 → Đô8
+const MIC_LO=40, MIC_HI=79; // micro chỉ dò nốt trong quãng các bài tập (Mi2 → Sol5), đã thử với âm tổng hợp
 const keyEls=new Map(); const whites=[];
 for(let m=LO;m<=HI;m++) if(WHITE.has(m%12)) whites.push(m);
 function buildKeyboard(){
@@ -2095,7 +2096,7 @@ function salience(mag,sr){
   const df=sr/FN, S=new Float32Array(128); let tot=0; for(let i=2;i<mag.length;i++) tot+=mag[i]*mag[i];
   const norm=Math.sqrt(tot)+1e-9, pk=f=>{ const c=Math.round(f/df); return c<1||c>=mag.length-1?0:Math.max(mag[c-1],mag[c],mag[c+1]); };
   const R=new Float32Array(128);
-  for(let m=LO-1;m<=HI+1;m++){ const f0=440*Math.pow(2,(m-69)/12); let h=0,s=0,odd=0,even=0;
+  for(let m=MIC_LO-1;m<=MIC_HI+1;m++){ const f0=440*Math.pow(2,(m-69)/12); let h=0,s=0,odd=0,even=0;
     for(let n=1;n<=6;n++){ const v=pk(f0*n*Math.sqrt(1+0.0004*n*n))/Math.sqrt(n); h+=v; if(n%2) odd+=v; else even+=v; }
     for(let n=1;n<=4;n++) s+=pk(f0*(n-0.5))/Math.sqrt(n);
     S[m]=Math.max(0,h-0.5*s)/norm; R[m]=odd/(even+1e-9); }
@@ -2103,7 +2104,7 @@ function salience(mag,sr){
 }
 /* exp: mảng nốt đang chờ (hoặc null), own: tập nốt trang đang tự phát. Trả về {hit:[nốt đúng], wrong: nốt sai hoặc -1, top} */
 function micJudge(S,exp,own,sens){
-  let max=0, top=-1; for(let m=LO;m<=HI;m++) if(!own.has(m)&&S[m]>max){ max=S[m]; top=m; }
+  let max=0, top=-1; for(let m=MIC_LO;m<=MIC_HI;m++) if(!own.has(m)&&S[m]>max){ max=S[m]; top=m; }
   const floor=0.16-sens*0.011; if(max<floor) return {hit:[],wrong:-1,top:-1,max};
   const hit=[];
   if(exp&&exp.length){
@@ -2199,7 +2200,7 @@ renderAnswers(); nextQ(); renderGame();
 renderAll(); renderChecks();
 setTab((location.hash||'').slice(1)||'homnay',true);
 fitDock(); window.addEventListener('resize',fitDock);
-{ const w=$('#kbwrap'), k=keyEls.get(48); if(k&&w.scrollWidth>w.clientWidth) w.scrollLeft=k.offsetLeft-8; }
+{ const w=$('#kbwrap'), k=keyEls.get(60); if(k&&w.scrollWidth>w.clientWidth) w.scrollLeft=Math.max(0,k.offsetLeft-w.clientWidth/2); } // mở đàn ở quanh Đô giữa
 initStore();
 </script>
 
