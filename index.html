@@ -619,7 +619,7 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
     <label class="tempo">Độ nhạy <input type="range" id="mic-sens" min="1" max="10" value="6" aria-label="Độ nhạy micro"><span class="num" id="mic-sens-v">6</span></label>
     <p class="mic-msg muted" style="font-size:.9rem"></p>
     <ul class="list" style="font-size:.93rem">
-      <li><b>Mở ở đâu:</b> trang trên claude.ai không được phép dùng micro. Trên iPad và máy tính, mở bản web riêng: <a href="https://pvviet002.github.io/so-tap-piano/" target="_blank" rel="noopener">pvviet002.github.io/so-tap-piano</a>. Lần đầu bấm Nghe đàn thật, trình duyệt sẽ hỏi quyền dùng micro: chọn Cho phép.</li>
+      <li><b>Mở ở đâu:</b> trang trên claude.ai không được phép dùng micro. Trên iPad và máy tính, mở bản web riêng: <a href="https://so-tap-piano.vercel.app/" target="_blank" rel="noopener">so-tap-piano.vercel.app</a> (bản dự phòng: <a href="https://pvviet002.github.io/so-tap-piano/" target="_blank" rel="noopener">pvviet002.github.io/so-tap-piano</a>). Lần đầu bấm Nghe đàn thật, trình duyệt sẽ hỏi quyền dùng micro: chọn Cho phép.</li>
       <li>Bản web riêng lưu nhật ký trong trình duyệt của từng máy, không chung với bản trên claude.ai.</li>
       <li>Đặt máy cách loa đàn khoảng nửa mét, phòng yên tĩnh, tắt quạt và tivi.</li>
       <li>Vặn âm lượng đàn vừa phải. Thanh xanh nhảy khi đàn là micro đang nghe tốt.</li>
@@ -2093,7 +2093,7 @@ async function micStart(){
     const src=ac.createMediaStreamSource(MIC.stream); MIC.an=ac.createAnalyser(); MIC.an.fftSize=FN; MIC.an.smoothingTimeConstant=0;
     src.connect(MIC.an); MIC.buf=new Float32Array(FN); MIC.on=true; MIC.prev=1; MIC.timer=setInterval(micTick,20);
     micUi(); toast('Đã bật micro. Đàn một nốt thử xem.');
-  }catch(err){ micFail(location.hostname.endsWith('claude.ai')||location.hostname.endsWith('claudeusercontent.com')?'Trang trên claude.ai không được dùng micro. Mở bản web riêng: pvviet002.github.io/so-tap-piano':'Chưa bật được micro: hãy cho phép trang dùng micro trong trình duyệt rồi thử lại.'); }
+  }catch(err){ micFail(location.hostname.endsWith('claude.ai')||location.hostname.endsWith('claudeusercontent.com')?'Trang trên claude.ai không được dùng micro. Mở bản web riêng: so-tap-piano.vercel.app':'Chưa bật được micro: hãy cho phép trang dùng micro trong trình duyệt rồi thử lại.'); }
 }
 function micStop(){ MIC.on=false; clearInterval(MIC.timer); clearTimeout(MIC.pending); MIC.pending=0; if(MIC.stream) MIC.stream.getTracks().forEach(t=>t.stop()); MIC.stream=null; $$('.micmeter i').forEach(x=>x.style.width='0'); micShow(-1); micUi(); }
 function micFail(msg){ MIC.on=false; micUi(); $$('.mic-msg').forEach(e=>e.textContent=msg); toast(msg); }
