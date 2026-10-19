@@ -267,6 +267,24 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .hand .n.on{fill:var(--card);font-size:14px}
 @media (min-height:820px){.handbar svg{height:84px}}
 @media (max-height:520px){.handbar{display:none!important}}
+/* Bài lẻ */
+.songmap{display:flex;flex-direction:column;gap:8px}
+.cau{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--paper)}
+.cau .loi{font-style:italic;color:var(--muted);font-size:.9rem}
+.cau .nfs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.nf{display:inline-flex;flex-direction:column;align-items:center;min-width:34px;padding:2px 6px;border-radius:7px;font-weight:600;font-size:.88rem;line-height:1.2}
+.nf.R{background:var(--felt-soft)} .nf.L{background:var(--brass-soft)}
+.nf small{font-size:.72rem;color:var(--muted);font-weight:700}
+.steps{display:flex;flex-direction:column;gap:8px}
+details.step{border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+details.step > summary{list-style:none;display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:10px 12px;cursor:pointer}
+details.step > summary::-webkit-details-marker{display:none}
+.snum{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;background:var(--card)}
+details.step.done .snum{background:var(--ok);border-color:var(--ok);color:var(--card)}
+details.step.cur .snum{border-color:var(--felt);color:var(--felt)}
+.stitle{font-weight:600}
+.stitle small{display:block;font-weight:400;color:var(--muted);font-size:.84rem}
+.sbody{padding:2px 12px 14px;display:flex;flex-direction:column;gap:10px}
 .stage-bar{display:flex;flex-direction:column;gap:6px;padding-block:2px 8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
 .stage-bar select{flex:1 1 240px;min-width:0;max-width:520px;font-weight:600;text-overflow:ellipsis}
 .dock.stage{max-height:100vh;max-height:100dvh;overflow-y:auto}
@@ -351,6 +369,7 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
   <div class="wrap tabrow" role="tablist">
     <button class="tab" role="tab" data-tab="homnay" aria-selected="true">Hôm nay</button>
     <button class="tab" role="tab" data-tab="lotrinh" aria-selected="false">Lộ trình</button>
+    <button class="tab" role="tab" data-tab="baile" aria-selected="false">Bài lẻ</button>
     <button class="tab" role="tab" data-tab="lythuyet" aria-selected="false">Nhạc lý</button>
     <button class="tab" role="tab" data-tab="docnot" aria-selected="false">Đọc nốt</button>
     <button class="tab" role="tab" data-tab="hopam" aria-selected="false">Hợp âm</button>
@@ -445,6 +464,16 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
     <div class="box-ph"><b>Phụ huynh:</b> nhịp độ trong lộ trình là gợi ý. Trẻ 6–8 tuổi có thể cần gấp rưỡi thời gian, điều đó bình thường. Người lớn tự học thường đi nhanh hơn. Nên cho em học thêm với giáo viên hoặc theo một giáo trình (gợi ý ở bài 20) để được chỉnh tư thế và ngón bấm sớm.</div>
   </div>
   <div id="roadmap" class="pane" style="gap:22px"></div>
+</section>
+
+<!-- BÀI LẺ -->
+<section class="pane" id="p-baile" hidden>
+  <div class="card">
+    <h2>Bài lẻ: học trọn một bài hát</h2>
+    <p>Mỗi bài được chia thành những bước nhỏ: nghe, tập từng câu bằng tay phải, tay trái riêng, rồi ghép hai tay. Mỗi bước có <b>Nghe mẫu</b>, <b>Tập theo</b> (đàn ảo chỉ phím và ngón) và <b>Nốt rơi</b>. Làm được bước nào thì bấm <b>Em làm được rồi</b> để sang bước sau.</p>
+    <div class="box-ph"><b>Phụ huynh:</b> mỗi buổi chỉ cần một hai bước, phần còn lại của buổi tập vẫn theo Lộ trình. Bước nào khó, cho em tập ở nhịp chậm hơn (kéo thanh Nhịp sang trái) và tập lại vào hôm sau trước khi sang bước mới.</div>
+  </div>
+  <div id="songs" class="pane" style="gap:12px"></div>
 </section>
 
 <!-- NHẠC LÝ -->
@@ -1143,13 +1172,14 @@ const LT_CAN={1:[1],2:[1,2],3:[3,4,5],4:[6,7],5:[9],6:[4],7:[6,7],8:[8],9:[9],10
 L.forEach(l=>l.lt=LT_CAN[l.n]||[]);
 
 /* ---------- Lưu trữ ---------- */
-const S={mode:'dangtai',sessions:{},done:{},checks:{},lt:{},db:null};
+const S={mode:'dangtai',sessions:{},done:{},checks:{},lt:{},bl:{},db:null};
 let wq=Promise.resolve();
 function queue(fn){ wq=wq.then(fn).catch(e=>toast('Chưa lưu được, thử lại sau. ('+(e&&e.code||e&&e.message||'lỗi')+')')); return wq; }
-function saveLocal(){ lsWrite('soTapPiano',{sessions:S.sessions,done:S.done,checks:S.checks,lt:S.lt}); }
+function saveLocal(){ lsWrite('soTapPiano',{sessions:S.sessions,done:S.done,checks:S.checks,lt:S.lt,bl:S.bl}); }
 function putLt(){ renderAll(); const d={daxong:Object.assign({},S.lt)}; if(S.mode==='db') queue(()=>S.db.doc('tiendo/lythuyet').set(d)); else saveLocal(); }
 function putSession(id,data){ S.sessions[id]=data; renderAll(); if(S.mode==='db') queue(()=>S.db.doc('buoitap/'+id).set(data)); else saveLocal(); }
 function delSession(id){ delete S.sessions[id]; renderAll(); if(S.mode==='db') queue(()=>S.db.doc('buoitap/'+id).delete()); else saveLocal(); }
+function putSongs(){ renderAll(); const d={daxong:JSON.parse(JSON.stringify(S.bl))}; if(S.mode==='db') queue(()=>S.db.doc('tiendo/baile').set(d)); else saveLocal(); }
 function putDone(){ renderAll(); const d={daxong:Object.assign({},S.done)}; if(S.mode==='db') queue(()=>S.db.doc('tiendo/chung').set(d)); else saveLocal(); }
 let checkT=0;
 function putChecks(){ renderChecks(); clearTimeout(checkT); checkT=setTimeout(()=>{ const d={muc:JSON.parse(JSON.stringify(S.checks))}; if(S.mode==='db') queue(()=>S.db.doc('kiemtra/kr570').set(d)); else saveLocal(); },500); }
@@ -1161,10 +1191,11 @@ async function initStore(){
     db.collection('buoitap').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{ if(d.exists) o[d.id]=JSON.parse(JSON.stringify(d.data())); }); S.sessions=o; renderAll(); },e=>console.warn('buoitap',e));
     db.doc('tiendo/chung').onSnapshot(s=>{ S.done=s.exists?JSON.parse(JSON.stringify(s.data().daxong||{})):{}; renderAll(); },e=>console.warn('tiendo',e));
     db.doc('tiendo/lythuyet').onSnapshot(s=>{ S.lt=s.exists?JSON.parse(JSON.stringify(s.data().daxong||{})):{}; renderAll(); },e=>console.warn('lythuyet',e));
+    db.doc('tiendo/baile').onSnapshot(s=>{ S.bl=s.exists?JSON.parse(JSON.stringify(s.data().daxong||{})):{}; renderAll(); },e=>console.warn('baile',e));
     db.doc('kiemtra/kr570').onSnapshot(s=>{ S.checks=s.exists?JSON.parse(JSON.stringify(s.data().muc||{})):{}; renderChecks(); },e=>console.warn('kiemtra',e));
   } else {
     S.mode='may'; const o=lsRead('soTapPiano',null);
-    if(o){ S.sessions=o.sessions||{}; S.done=o.done||{}; S.checks=o.checks||{}; S.lt=o.lt||{}; }
+    if(o){ S.sessions=o.sessions||{}; S.done=o.done||{}; S.checks=o.checks||{}; S.lt=o.lt||{}; S.bl=o.bl||{}; }
     renderAll(); renderChecks();
   }
 }
@@ -1286,6 +1317,90 @@ function makePlayer(ex,host){
   p.renderRoll(); players.push(p); return p;
 }
 function rerenderRolls(){ players.forEach(p=>p.renderRoll()); }
+
+/* ---------- Bài lẻ: học trọn từng bài hát theo bước nhỏ ---------- */
+const HPB_RH='G3/0.5:1 G3/0.5:1 A3:2 G3:1 C4:4 B3/2:3 G3/0.5:1 G3/0.5:1 A3:2 G3:1 D4:5 C4/2:4 G3/0.5:1 G3/0.5:1 G4:5 E4:3 C4:1 B3:3 A3:2 F4/0.5:4 F4/0.5:4 E4:3 C4:1 D4:2 C4/3:1';
+const HPB_LH='-/1 C3/3:1 G2/3:4 G2/3:4 C3/3:1 C3/3:1 F2/3:5 C3/2:1 G2:4 C3/3:1';
+const SONGS=[
+ {id:'hpb',ten:'Happy Birthday',sub:'Chúc mừng sinh nhật · nhịp 3/4 · tay phải và tay trái',
+  gioi:'Bài hát quen thuộc nhất để em đàn tặng người thân. Bài có bốn câu, mỗi câu bắt đầu bằng hai nốt ngắn đứng trước ô nhịp (phách đón).',
+  can:'Nên học sau bài 9 (Chúc mừng sinh nhật, tay phải) và bài 12 (lần đầu chơi hai tay) của Lộ trình.',
+  cau:[
+   {ten:'Câu 1',loi:'Happy birthday to you',v:'G3/0.5:1 G3/0.5:1 A3:2 G3:1 C4:4 B3/2:3'},
+   {ten:'Câu 2',loi:'Happy birthday to you',v:'G3/0.5:1 G3/0.5:1 A3:2 G3:1 D4:5 C4/2:4'},
+   {ten:'Câu 3',loi:'Happy birthday, dear (tên người thân)',v:'G3/0.5:1 G3/0.5:1 G4:5 E4:3 C4:1 B3:3 A3:2'},
+   {ten:'Câu 4',loi:'Happy birthday to you',v:'F4/0.5:4 F4/0.5:4 E4:3 C4:1 D4:2 C4/3:1'}],
+  buoc:[
+   {ten:'Nghe cả bài và vỗ tay theo nhịp',sub:'chưa cần đàn',
+    lam:['Bấm <b>Nghe mẫu</b>. Đếm to "một – hai – ba", vỗ tay vào tiếng "một".','Nghe kỹ hai nốt ngắn ở đầu mỗi câu: chúng đứng trước tiếng "một".'],
+    ex:[{ten:'Cả bài, hai tay',bpm:80,beats:3,pickup:1,rh:HPB_RH,lh:HPB_LH}]},
+   {ten:'Câu 1, tay phải',sub:'Sol Sol La Sol Đô Si',
+    lam:['Đặt <b>ngón 1</b> (ngón cái) tay phải lên phím Sol, ngay bên trái Đô giữa. Các ngón 2, 3, 4, 5 nằm trên La, Si, Đô, Rê.','Hai nốt Sol đầu tiên ngắn và nhanh. Ngón 4 bấm Đô, ngón 3 bấm Si rồi giữ hai phách.'],
+    ex:[{ten:'Câu 1, tay phải',bpm:60,beats:3,pickup:1,rh:'G3/0.5:1 G3/0.5:1 A3:2 G3:1 C4:4 B3/2:3'}]},
+   {ten:'Câu 2, tay phải',sub:'giống câu 1, chỉ khác hai nốt cuối',
+    lam:['Tay vẫn ở chỗ cũ, ngón 1 trên Sol.','Cuối câu, <b>ngón 5</b> bấm Rê rồi <b>ngón 4</b> về Đô và giữ hai phách.'],
+    ex:[{ten:'Câu 2, tay phải',bpm:60,beats:3,pickup:1,rh:'G3/0.5:1 G3/0.5:1 A3:2 G3:1 D4:5 C4/2:4'}]},
+   {ten:'Luyện riêng chỗ vắt ngón',sub:'chuẩn bị cho câu 3',
+    lam:['Ngón 1 bấm Đô giữa. Sau đó <b>ngón 3 vắt qua trên ngón cái</b> để bấm Si, rồi ngón 2 bấm La.','Tập chậm năm lần. Cổ tay giữ yên, ngón cái không nhấc cao.'],
+    ex:[{ten:'Vắt ngón 3 qua ngón cái',bpm:60,beats:3,rh:'C4:1 B3:3 A3:2 C4:1 B3:3 A3:2 C4:1 B3:3 A3:2 C4:1 B3:3 A3:2'}]},
+   {ten:'Câu 3, tay phải',sub:'câu cao nhất của bài',
+    lam:['Hai nốt Sol đầu với ngón 1 như cũ.','Rồi cả bàn tay nhảy lên: <b>ngón 5</b> bấm Sol cao, ngón 3 bấm Mi, ngón 1 bấm Đô giữa.','Cuối câu là chỗ vắt ngón em vừa luyện: ngón 3 bấm Si, ngón 2 bấm La.'],
+    ex:[{ten:'Câu 3, tay phải',bpm:55,beats:3,pickup:1,rh:'G3/0.5:1 G3/0.5:1 G4:5 E4:3 C4:1 B3:3 A3:2'}]},
+   {ten:'Câu 4, tay phải',sub:'tay về vị trí Đô',
+    lam:['Đặt ngón 1 lên Đô giữa: ngón 4 nằm trên Fa.','Hai nốt Fa ngắn bằng ngón 4, rồi Mi (ngón 3), Đô (ngón 1), Rê (ngón 2), Đô (ngón 1) giữ ba phách.'],
+    ex:[{ten:'Câu 4, tay phải',bpm:60,beats:3,pickup:1,rh:'F4/0.5:4 F4/0.5:4 E4:3 C4:1 D4:2 C4/3:1'}]},
+   {ten:'Ghép cả bài, tay phải',sub:'bốn câu liền nhau',
+    lam:['Chơi bốn câu liền, không dừng giữa các câu.','Chỗ chuyển tay khó nhất: từ câu 3 sang câu 4. Chơi chậm trước, trơn rồi mới tăng nhịp.'],
+    ex:[{ten:'Cả bài, tay phải',bpm:60,beats:3,pickup:1,rh:HPB_RH}]},
+   {ten:'Tay trái riêng',sub:'mỗi ô nhịp một nốt trầm',
+    lam:['Tay trái đặt <b>ngón 1 trên Đô</b> thấp (thấp hơn Đô giữa một quãng tám); ngón 4 nằm trên Sol, ngón 5 trên Fa.','Mỗi ô nhịp bấm một nốt vào tiếng "một" và giữ đủ ba phách.'],
+    ex:[{ten:'Tay trái',bpm:70,beats:3,pickup:1,lh:HPB_LH}]},
+   {ten:'Hai tay, chậm',sub:'ghép tay trái vào tay phải',
+    lam:['Tay trái bấm cùng lúc với nốt tay phải ở tiếng "một" của mỗi ô nhịp.','Tập chậm. Nếu rối, quay lại chọn <b>Tay phải</b> hoặc <b>Tay trái</b> trong khung tập.'],
+    ex:[{ten:'Cả bài, hai tay',bpm:50,beats:3,pickup:1,rh:HPB_RH,lh:HPB_LH}],
+    dat:'Làm được khi em chơi hai tay hết bài ở nhịp 50, không dừng.'},
+   {ten:'Biểu diễn cho cả nhà',sub:'nhịp 80',
+    lam:['Tăng nhịp dần tới 80.','Mời cả nhà hát theo. Nhớ nghỉ một chút ở chữ "dear" để mọi người kịp hát tên.'],
+    ex:[{ten:'Cả bài, hai tay',bpm:80,beats:3,pickup:1,rh:HPB_RH,lh:HPB_LH}],
+    dat:'Làm được khi cả nhà hát theo được em.'}]}
+];
+SONGS.forEach(sg=>{ sg.cau.forEach(c=>c.ev=parseVoice(c.v,'R')); sg.buoc.forEach(b=>b.exs=b.ex.map(buildEx)); });
+function songCur(sg){ const d=S.bl[sg.id]||{}; return sg.buoc.findIndex((b,i)=>!d[i]); }
+function buildSongs(){
+  const host=$('#songs'); host.innerHTML='';
+  SONGS.forEach(sg=>{
+    const d=document.createElement('details'); d.className='lesson'; d.id='song-'+sg.id; sg.el=d;
+    const map=sg.cau.map(c=>`<div class="cau"><b>${esc(c.ten)}</b> <span class="loi">${esc(c.loi)}</span><div class="nfs">${c.ev.filter(e=>!e.rest).map(e=>`<span class="nf R">${esc(nm(e.notes[0],'sol'))}<small>${e.fing[0]?'ngón '+e.fing[0]:''}</small></span>`).join('')}</div></div>`).join('');
+    d.innerHTML=`<summary><span class="lnum">♪</span><span class="ltitle">${esc(sg.ten)}<small>${esc(sg.sub)}</small></span><span data-chip></span></summary>
+      <div class="lbody"><p>${esc(sg.gioi)}</p><p class="muted">${esc(sg.can)}</p>
+      <h3 style="margin:0">Bản đồ bài: bốn câu, tay phải</h3><div class="songmap">${map}</div>
+      <h3 style="margin:0">Các bước</h3><div class="steps" data-steps></div></div>`;
+    host.appendChild(d);
+    const sh=$('[data-steps]',d);
+    sg.buoc.forEach((b,i)=>{
+      const st=document.createElement('details'); st.className='step'; b.el=st;
+      st.innerHTML=`<summary><span class="snum">${i+1}</span><span class="stitle">${esc(b.ten)}<small>${esc(b.sub||'')}</small></span><span data-chip></span></summary>
+        <div class="sbody"><ol class="list">${b.lam.map(x=>'<li>'+x+'</li>').join('')}</ol><div data-ex style="display:flex;flex-direction:column;gap:10px"></div>
+        ${b.dat?`<p class="dat">${esc(b.dat)}</p>`:''}<div class="row"><button class="btn pri" data-done></button></div></div>`;
+      sh.appendChild(st);
+      let built=false;
+      st.addEventListener('toggle',()=>{ if(!st.open){ if(act&&act.player&&st.contains(act.player.root)) stopAll(); return; } if(built) return; built=true; b.exs.forEach(ex=>makePlayer(ex,$('[data-ex]',st))); });
+      $('[data-done]',st).addEventListener('click',()=>{ const o=Object.assign({},S.bl[sg.id]||{});
+        if(o[i]) delete o[i]; else { o[i]=today(); chime(); toast(i+1<sg.buoc.length?'Giỏi lắm! Sang bước '+(i+2)+' nhé.':'Em đã học xong cả bài '+sg.ten+'!'); }
+        S.bl[sg.id]=o; putSongs();
+        if(o[i]){ const nx=sg.buoc.find((x,j)=>j>i&&!o[j])||sg.buoc[songCur(sg)]; st.open=false; if(nx){ nx.el.open=true; setTimeout(()=>nx.el.scrollIntoView({behavior:'smooth',block:'start'}),60); } } });
+    });
+    let opened=false;
+    d.addEventListener('toggle',()=>{ if(!d.open||opened) return; opened=true; const k=songCur(sg); if(k>=0) sg.buoc[k].el.open=true; });
+  });
+}
+function renderSongStatus(){
+  SONGS.forEach(sg=>{ if(!sg.el) return; const o=S.bl[sg.id]||{}, k=songCur(sg), n=sg.buoc.filter((b,i)=>o[i]).length;
+    $('[data-chip]',sg.el).innerHTML=k<0?'<span class="chip ok">★ Đã học xong</span>':`<span class="chip${n?' felt':''}">${n}/${sg.buoc.length} bước</span>`;
+    sg.buoc.forEach((b,i)=>{ const ok=!!o[i]; b.el.classList.toggle('done',ok); b.el.classList.toggle('cur',i===k);
+      $('[data-chip]',b.el).innerHTML=ok?'<span class="chip ok">✓</span>':(i===k?'<span class="chip felt">Đang tập</span>':'');
+      const bt=$('.sbody [data-done]',b.el); bt.textContent=ok?'Bỏ đánh dấu':'Em làm được rồi ✓'; bt.className=ok?'btn':'btn pri'; }); });
+}
 
 /* ---------- Lộ trình ---------- */
 function buildRoadmap(){
@@ -1536,7 +1651,7 @@ function renderLog(){
     del.addEventListener('click',()=>{ if(!arm){ arm=true; del.textContent='Bấm lần nữa để xoá'; setTimeout(()=>{arm=false;del.textContent='Xoá';},3000); return; } delSession(id); });
     ul.appendChild(li); });
 }
-function renderAll(){ renderToday(); renderRoadmapStatus(); renderLog(); renderTheoryStatus(); }
+function renderAll(){ renderToday(); renderRoadmapStatus(); renderSongStatus(); renderLog(); renderTheoryStatus(); }
 
 /* ---------- Kiểm tra đàn ---------- */
 const CHECKS=[
@@ -1927,6 +2042,7 @@ function openTheory(n){ setTab('lythuyet'); const d=$('#nl-'+n); if(!d) return; 
 const F={on:false,ex:null,mode:'cho',filter:'all',bpm:60,now:0,last:0,raf:0,run:false,done:false,metro:false,sound:true,
   notes:[],req:[],auto:[],steps:[],si:0,got:new Set(),wait:false,err:0,ok:0,perfect:0,ai:0,ci:4,fx:[],hints:new Set(),geo:new Map(),W:0,H:0,dpr:1,col:{},result:null};
 const FALL_EX=[]; L.forEach(l=>l.exs.forEach(ex=>FALL_EX.push({l,ex,label:`Bài ${l.n} · ${ex.ten}`})));
+SONGS.forEach(sg=>sg.buoc.forEach((b,i)=>b.exs.forEach(ex=>FALL_EX.push({ex,label:`${sg.ten} · bước ${i+1} · ${ex.ten}`}))));
 function fallColors(){ const cs=getComputedStyle(document.documentElement), g=k=>cs.getPropertyValue(k).trim();
   F.col={R:g('--felt'),L:g('--brass'),ok:g('--ok'),bad:g('--bad'),ink:g('--ink'),line:g('--line'),paper:g('--paper'),card:g('--card'),muted:g('--muted')}; }
 function fallGeo(){ F.geo.clear(); keyEls.forEach((k,m)=>F.geo.set(m,[k.offsetLeft,k.offsetWidth,k.classList.contains('b')])); }
@@ -2176,7 +2292,7 @@ function bindMic(){
 }
 
 /* ---------- Thẻ ---------- */
-const TABS=['homnay','lotrinh','lythuyet','docnot','hopam','nhip','nhatky','cayan'];
+const TABS=['homnay','lotrinh','baile','lythuyet','docnot','hopam','nhip','nhatky','cayan'];
 function setTab(t,noHash){
   if(!TABS.includes(t)) t='homnay';
   if(act&&curTab!==t) stopAll();
@@ -2193,7 +2309,7 @@ $('#t-open').addEventListener('click',()=>{ const l=curLesson(); setTab('lotrinh
 const _emit=emit;
 emit=function(m){ if(recorderHook&&curTab==='lotrinh'&&!(act&&act.kind==='practice')) recorderHook(m); _emit(m); };
 $('#t-lt-open').addEventListener('click',e=>openTheory(+e.currentTarget.dataset.n||1));
-buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildTheory(); buildChords(); bindFall(); bindMic(); bindMetro(); bindTimer(); bindLog(); buildChecks();
+buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildSongs(); buildTheory(); buildChords(); bindFall(); bindMic(); bindMetro(); bindTimer(); bindLog(); buildChecks();
 const lvSel=$('#g-level'); LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i;o.textContent=lv.ten;lvSel.appendChild(o);});
 lvSel.value=G.lv; lvSel.addEventListener('change',()=>setLevel(lvSel.value)); $('#g-reset').addEventListener('click',()=>setLevel(G.lv));
 renderAnswers(); nextQ(); renderGame();
