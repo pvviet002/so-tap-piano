@@ -266,7 +266,7 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .hand.R .fg.on{fill:var(--felt);stroke:var(--felt)} .hand.L .fg.on{fill:var(--brass);stroke:var(--brass)}
 .hand .n.on{fill:var(--card);font-size:14px}
 @media (min-height:820px){.handbar svg{height:84px}}
-@media (max-height:520px){.handbar{display:none!important}}
+@media (max-height:520px){.handbar{display:none!important}.handzone{height:24px}}
 /* Bài lẻ */
 .songmap{display:flex;flex-direction:column;gap:8px}
 .cau{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--paper)}
@@ -285,6 +285,10 @@ details.step.cur .snum{border-color:var(--felt);color:var(--felt)}
 .stitle{font-weight:600}
 .stitle small{display:block;font-weight:400;color:var(--muted);font-size:.84rem}
 .sbody{padding:2px 12px 14px;display:flex;flex-direction:column;gap:10px}
+/* Bàn tay nằm trên phím */
+#handov{position:absolute;left:0;top:0;width:100%;pointer-events:none;overflow:visible;z-index:4}
+.handzone{height:46px}
+#handov .tip{font:700 12px var(--f-body);text-anchor:middle;dominant-baseline:central}
 .stage-bar{display:flex;flex-direction:column;gap:6px;padding-block:2px 8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
 .stage-bar select{flex:1 1 240px;min-width:0;max-width:520px;font-weight:600;text-overflow:ellipsis}
 .dock.stage{max-height:100vh;max-height:100dvh;overflow-y:auto}
@@ -748,7 +752,7 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       <div class="hcap R" id="hcap-R"><b>Tay phải</b><span></span></div>
       <svg class="hand R" id="hand-R" role="img" aria-label="Bàn tay phải"></svg>
     </div>
-    <div class="kbwrap" id="kbwrap"><div class="kbcol" id="kbcol"><canvas id="fall" hidden aria-label="Nốt rơi xuống phím"></canvas><div class="felt"></div><div class="kb" id="kb"></div></div></div>
+    <div class="kbwrap" id="kbwrap"><div class="kbcol" id="kbcol"><canvas id="fall" hidden aria-label="Nốt rơi xuống phím"></canvas><div class="felt"></div><div class="kb" id="kb"></div><div class="handzone" id="handzone" hidden></div><svg id="handov" aria-hidden="true"></svg></div></div>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -884,6 +888,38 @@ function handSVG(h){
   s+=`<text class="n" data-f="1" x="${mx(12)}" y="45">1</text>`;
   return s;
 }
+// Vị trí từng bàn tay: một nốt có ngón đã biết (neo) là đủ suy ra năm ngón nằm trên năm phím trắng liền nhau.
+const HP={R:null,L:null};
+function handPosClear(){ HP.R=HP.L=null; drawHandOv(); }
+function handPosFrom(evs){ ['R','L'].forEach(h=>{ const e=evs.find(x=>!x.rest&&x.hand===h&&x.fing.some(Boolean)); if(e){ const k=e.fing.findIndex(Boolean); HP[h]={m:e.notes[k],f:+e.fing[k]}; } }); drawHandOv(); }
+function handKeys(h,a){ // ngón 1..5 -> phần tử phím
+  const d=h==='R'?1:-1, black=!WHITE.has(a.m%12), wl=whites.indexOf(black?a.m-1:a.m), out={};
+  for(let k=1;k<=5;k++){ if(k===a.f){ out[k]=keyEls.get(a.m); continue; }
+    const t=d*(k-a.f), idx=black?(t>0?wl+t:wl+1+t):wl+t; out[k]=whites[idx]!=null?keyEls.get(whites[idx]):null; }
+  return out;
+}
+function drawHandOv(){
+  const svg=$('#handov'), kb=$('#kb'), zone=$('#handzone'); if(!svg||!kb) return;
+  if(zone.hidden||(!HP.R&&!HP.L)){ svg.innerHTML=''; return; }
+  const H=kb.offsetHeight, top=kb.offsetTop, Z=zone.offsetHeight, ww=keyEls.get(60).offsetWidth, fw=Math.max(13,ww*0.68);
+  svg.style.top=top+'px'; svg.setAttribute('height',H+Z); svg.setAttribute('width',kb.offsetWidth);
+  const col={R:'var(--felt)',L:'var(--brass)'}, act=new Set(); FING.forEach(x=>{ if(x.f) act.add(x.hand+x.f); });
+  let o='';
+  ['R','L'].forEach(h=>{ const a=HP[h]; if(!a) return; const ks=handKeys(h,a), P={};
+    for(let k=1;k<=5;k++){ const el=ks[k]; if(!el) continue; const blk=el.classList.contains('b');
+      P[k]={x:el.offsetLeft+el.offsetWidth/2, y:(blk?H*0.38:H*0.7)+(k===1?10:0)}; }
+    const xs=[2,3,4,5].filter(k=>P[k]).map(k=>P[k].x); if(!xs.length) return;
+    const pc=xs.reduce((s,x)=>s+x,0)/xs.length, c=col[h];
+    const lo=Math.min(...xs)-fw*0.55, hi=Math.max(...xs)+fw*0.55;
+    o+=`<rect x="${lo}" y="${H+3}" width="${hi-lo}" height="${Z+30}" rx="${fw*0.9}" fill="${c}" fill-opacity=".35" stroke="${c}" stroke-opacity=".75" stroke-width="1.5"/>`;
+    for(let k=1;k<=5;k++){ const q=P[k]; if(!q) continue; const on=act.has(h+k);
+      const bx=k===1?q.x+(pc-q.x)*0.45:q.x+(pc-q.x)*0.2, by=k===1?H+Z*0.55:H+8;
+      o+=`<line x1="${q.x}" y1="${q.y}" x2="${bx}" y2="${by}" stroke="${c}" stroke-opacity="${on?.9:.45}" stroke-width="${fw}" stroke-linecap="round"/>`;
+      o+=`<circle cx="${q.x}" cy="${q.y}" r="${fw*0.5}" fill="${on?c:'#FBFAF5'}" stroke="${c}" stroke-width="${on?2.5:1.5}"/>`;
+      o+=`<text class="tip" x="${q.x}" y="${q.y}" fill="${on?'#fff':'#1A2130'}">${k}</text>`; }
+  });
+  svg.innerHTML=o;
+}
 const FING=new Map(); // phím -> {m, hand, f}
 const evFing=e=>e.hand?e.notes.map((m,k)=>({m,hand:e.hand,f:e.fing[k]||''})):[];
 function fingSet(list){ FING.clear(); fingAdd(list); }
@@ -892,14 +928,15 @@ function fingDel(ms){ ms.forEach(m=>FING.delete(m)); fingDraw(); }
 function fingDraw(){
   $$('#kb .fb').forEach(b=>b.remove());
   const on={R:[],L:[]};
-  FING.forEach(x=>{ const k=keyEls.get(x.m); if(k){ const b=document.createElement('span'); b.className='fb '+x.hand; b.textContent=x.f; k.appendChild(b); } on[x.hand].push(x); });
+  FING.forEach(x=>{ if(x.f&&HP[x.hand]==null) HP[x.hand]={m:x.m,f:+x.f}; else if(x.f){ const ks=handKeys(x.hand,HP[x.hand]); if(ks[+x.f]!==keyEls.get(x.m)) HP[x.hand]={m:x.m,f:+x.f}; }
+    const k=keyEls.get(x.m); if(k&&!(x.f&&HP[x.hand])){ const b=document.createElement('span'); b.className='fb '+x.hand; b.textContent=x.f; k.appendChild(b); } on[x.hand].push(x); });
   ['R','L'].forEach(h=>{ const fs=new Set(on[h].map(x=>x.f));
     $$('#hand-'+h+' .fg, #hand-'+h+' .n').forEach(el=>el.classList.toggle('on',fs.has(el.dataset.f)));
     $('#hcap-'+h+' span').textContent=on[h].sort((a,b)=>a.m-b.m).map(x=>(x.f?'ngón '+x.f+' → ':'')+nm(x.m,'sol')).join(', '); });
-  handbarSync();
+  handbarSync(); drawHandOv();
 }
-function handbarSync(){ const hb=$('#handbar'), show=F.on||!!(act&&act.player); if(hb.hidden===show){ hb.hidden=!show; fitDock(); } }
-function buildHands(){ $('#hand-L').setAttribute('viewBox','-4 0 104 82'); $('#hand-R').setAttribute('viewBox','-4 0 104 82'); $('#hand-L').innerHTML=handSVG('L'); $('#hand-R').innerHTML=handSVG('R'); setInterval(handbarSync,300); }
+function handbarSync(){ const hb=$('#handbar'), show=F.on||!!(act&&act.player); if(hb.hidden===show){ hb.hidden=!show; $('#handzone').hidden=!show; if(!show) HP.R=HP.L=null; fitDock(); drawHandOv(); } }
+function buildHands(){ $('#hand-L').setAttribute('viewBox','-4 0 104 82'); $('#hand-R').setAttribute('viewBox','-4 0 104 82'); $('#hand-L').innerHTML=handSVG('L'); $('#hand-R').innerHTML=handSVG('R'); setInterval(handbarSync,300); window.addEventListener('resize',drawHandOv); }
 function flashKey(m,cls,ms){const k=keyEls.get(m); if(!k) return; k.classList.add(cls); setTimeout(()=>k.classList.remove(cls),ms||380)}
 function ensureVisible(m){
   const k=keyEls.get(m), w=$('#kbwrap'); if(!k||w.scrollWidth<=w.clientWidth) return;
@@ -1213,13 +1250,13 @@ const PX=46; let act=null; const players=[];
 function stopAll(msg){
   if(!act) return; const a=act; act=null;
   a.timeouts.forEach(clearTimeout); a.voices.forEach(v=>releaseVoice(v,true));
-  $$('.k.hint,.k.play').forEach(k=>k.classList.remove('hint','play')); fingSet([]);
+  $$('.k.hint,.k.play').forEach(k=>k.classList.remove('hint','play')); HP.R=HP.L=null; fingSet([]);
   if(a.player){ $$('.blk.now',a.player.root).forEach(b=>b.classList.remove('now')); a.player.setStatus(msg||''); a.player.syncButtons(); }
   if(a.onStop) a.onStop();
 }
 function runEvents(events,bpm,o){
   const a=audio(), spb=60/bpm, t0=a.currentTime+0.12, lead=o.countIn?o.beats*spb:0, st={kind:'demo',timeouts:[],voices:[],player:o.player||null,onStop:o.onStop};
-  act=st;
+  act=st; if(o.player) handPosFrom(events);
   if(o.countIn) for(let i=0;i<o.beats;i++) click(t0+i*spb,i===0);
   const end=Math.max(...events.map(e=>e.t+e.d));
   if(o.metro){ for(let b=0;b<end;b+=1) click(t0+lead+b*spb, ((b-(o.pickup||0))%o.beats+o.beats)%o.beats===0); }
@@ -1231,7 +1268,7 @@ function runEvents(events,bpm,o){
     st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('play');}); fingAdd(evFing(e)); if(e.notes[0]) ensureVisible(e.notes[0]); o.onEvent&&o.onEvent(e,true); },ms));
     st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.remove('play');}); fingDel(e.notes); o.onEvent&&o.onEvent(e,false); },ms+dur*1000-25));
   });
-  st.timeouts.push(setTimeout(()=>{ if(act===st){ act=null; fingSet([]); o.onEnd&&o.onEnd(); } },(lead+end*spb)*1000+250));
+  st.timeouts.push(setTimeout(()=>{ if(act===st){ act=null; HP.R=HP.L=null; fingSet([]); o.onEnd&&o.onEnd(); } },(lead+end*spb)*1000+250));
   return st;
 }
 function makePlayer(ex,host){
@@ -1307,12 +1344,12 @@ function makePlayer(ex,host){
       const s=steps[st.i];
       if(s.req.has(m)){ st.got.add(m); const k=keyEls.get(m); if(k) k.classList.remove('hint'); fingDel([m]);
         if([...s.req].every(x=>st.got.has(x))){ st.got=new Set(); st.i++;
-          if(st.i>=steps.length){ const e=st.err; act=null; fingSet([]); $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now')); p.syncButtons();
+          if(st.i>=steps.length){ const e=st.err; act=null; HP.R=HP.L=null; fingSet([]); $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now')); p.syncButtons();
             p.setStatus(e===0?'Xuất sắc! Không sai nốt nào. Thử tăng tốc độ hoặc chơi trên đàn thật.':`Xong cả bài, sai ${e} nốt. Chơi lại một lần nữa nhé.`, e===0); if(e===0) chime(); return; }
           show(); }
       } else { st.err++; flashKey(m,'bad'); s.req.forEach(x=>flashKey(x,'good',500)); show(); }
     };
-    act=st; show(); p.syncButtons();
+    act=st; handPosFrom(evs); show(); p.syncButtons();
   });
   p.renderRoll(); players.push(p); return p;
 }
@@ -2063,7 +2100,7 @@ function fallReset(){
     e.notes.forEach((m,k)=>{ const n={t:e.t,d:e.d,m,f:e.fing[k]||'',hand:e.hand,sel,r:null}; if(req){ n.r={t:e.t,m,st:0,hand:e.hand,f:e.fing[k]||''}; F.req.push(n.r); } F.notes.push(n); }); });
   F.auto=ex.events.filter(e=>!e.rest&&(F.mode==='that'||!fallSel(e))).sort((a,b)=>a.t-b.t);
   F.steps=[...new Set(F.req.map(r=>r.t))].sort((a,b)=>a-b).map(t=>({t,req:F.req.filter(r=>r.t===t)}));
-  setHints(new Set()); fallUi(); fallDraw();
+  HP.R=HP.L=null; setHints(new Set()); handPosFrom(ex.events.filter(e=>fallSel(e))); fallUi(); fallDraw();
 }
 function openFall(ex){
   stopAll(); F.ex=ex; F.on=true;
@@ -2075,7 +2112,7 @@ function openFall(ex){
   fallColors(); fallReset(); handbarSync(); requestAnimationFrame(sizeFall);
   if(!F.raf){ F.last=0; F.raf=requestAnimationFrame(fallLoop); }
 }
-function closeFall(){ if(!F.on) return; F.on=false; F.run=false; setHints(new Set()); $('#stage-bar').hidden=true; $('#fall').hidden=true; $('#dock').classList.remove('stage'); handbarSync(); fitDock(); }
+function closeFall(){ if(!F.on) return; F.on=false; F.run=false; HP.R=HP.L=null; setHints(new Set()); $('#stage-bar').hidden=true; $('#fall').hidden=true; $('#dock').classList.remove('stage'); handbarSync(); fitDock(); }
 function fallUi(){
   $('#fl-go').textContent=F.run?'Tạm dừng':F.done?'Chơi lại từ đầu':F.now>-F.ci+0.001?'Tiếp tục':'Bắt đầu';
   $('#fl-sound-l').hidden=F.mode!=='that';
