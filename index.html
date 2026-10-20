@@ -266,7 +266,9 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .hand.R .fg.on{fill:var(--felt);stroke:var(--felt)} .hand.L .fg.on{fill:var(--brass);stroke:var(--brass)}
 .hand .n.on{fill:var(--card);font-size:14px}
 @media (min-height:820px){.handbar svg{height:84px}}
-@media (max-height:520px){.handbar{display:none!important}.handzone{height:24px}}
+@media (max-height:520px){.handbar{display:none!important}.handzone{height:40px!important}}
+@media (max-width:600px) and (max-height:700px){.handbar{display:none!important}}
+@media (max-width:600px){.handbar{flex-direction:column;align-items:stretch;gap:4px;padding-bottom:4px}.qc{min-width:34px;padding:2px 5px}.qc b{font-size:.84rem}.qc.first{min-width:52px;padding:3px 8px}.qc.first b{font-size:1.05rem}.stage-bar{gap:4px;padding-bottom:4px;margin-bottom:4px}.stage-bar .ctrls{gap:4px 6px}.stage-bar select{padding:4px 8px}.stage-bar .seg button{padding:4px 8px}.stage-bar .btn{padding:4px 9px}.fl-status{font-size:.82rem}.handzone{height:60px}}
 /* Bài lẻ */
 .songmap{display:flex;flex-direction:column;gap:8px}
 .cau{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--paper)}
@@ -287,8 +289,21 @@ details.step.cur .snum{border-color:var(--felt);color:var(--felt)}
 .sbody{padding:2px 12px 14px;display:flex;flex-direction:column;gap:10px}
 /* Bàn tay nằm trên phím */
 #handov{position:absolute;left:0;top:0;width:100%;pointer-events:none;overflow:visible;z-index:4}
-.handzone{height:46px}
+.handzone{height:76px}
 #handov .tip{font:700 12px var(--f-body);text-anchor:middle;dominant-baseline:central}
+/* Dải nốt sắp tới */
+.handbar{gap:10px}
+.qrow{display:flex;align-items:center;gap:6px;min-width:0;flex:1}
+.qh{flex:none;font-weight:700;font-size:.78rem;padding:3px 8px;border-radius:99px;color:#fff}
+.qrow.R .qh{background:var(--felt)} .qrow.L .qh{background:var(--brass)}
+.qcells{display:flex;gap:4px;align-items:stretch;min-width:0;overflow:hidden}
+.qc{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:40px;padding:3px 6px;border-radius:8px;background:var(--paper);border:1px solid var(--line);line-height:1.15}
+.qc b{font-size:.92rem;white-space:nowrap} .qc small{font-size:.7rem;color:var(--muted);font-weight:600;white-space:nowrap}
+.qc.first{min-width:64px;padding:5px 10px;border-width:2px} .qc.first b{font-size:1.3rem}
+.qrow.R .qc.first{border-color:var(--felt)} .qrow.L .qc.first{border-color:var(--brass)}
+.qrow.R .qc.now{background:var(--felt)} .qrow.L .qc.now{background:var(--brass)}
+.qc.now b,.qc.now small{color:#fff}
+.qend{font-size:.8rem;color:var(--muted)}
 .stage-bar{display:flex;flex-direction:column;gap:6px;padding-block:2px 8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
 .stage-bar select{flex:1 1 240px;min-width:0;max-width:520px;font-weight:600;text-overflow:ellipsis}
 .dock.stage{max-height:100vh;max-height:100dvh;overflow-y:auto}
@@ -746,11 +761,9 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       </div>
       <div class="fl-status" id="fl-status"></div>
     </div>
-    <div class="handbar" id="handbar" hidden aria-live="polite">
-      <svg class="hand L" id="hand-L" role="img" aria-label="Bàn tay trái"></svg>
-      <div class="hcap L" id="hcap-L"><b>Tay trái</b><span></span></div>
-      <div class="hcap R" id="hcap-R"><b>Tay phải</b><span></span></div>
-      <svg class="hand R" id="hand-R" role="img" aria-label="Bàn tay phải"></svg>
+    <div class="handbar" id="handbar" hidden>
+      <div class="qrow L" id="qrow-L"><span class="qh">Trái</span><div class="qcells" id="q-L"></div></div>
+      <div class="qrow R" id="qrow-R"><span class="qh">Phải</span><div class="qcells" id="q-R"></div></div>
     </div>
     <div class="kbwrap" id="kbwrap"><div class="kbcol" id="kbcol"><canvas id="fall" hidden aria-label="Nốt rơi xuống phím"></canvas><div class="felt"></div><div class="kb" id="kb"></div><div class="handzone" id="handzone" hidden></div><svg id="handov" aria-hidden="true"></svg></div></div>
   </div>
@@ -891,7 +904,8 @@ function handSVG(h){
 // Vị trí từng bàn tay: một nốt có ngón đã biết (neo) là đủ suy ra năm ngón nằm trên năm phím trắng liền nhau.
 const HP={R:null,L:null};
 function handPosClear(){ HP.R=HP.L=null; drawHandOv(); }
-function handPosFrom(evs){ ['R','L'].forEach(h=>{ const e=evs.find(x=>!x.rest&&x.hand===h&&x.fing.some(Boolean)); if(e){ const k=e.fing.findIndex(Boolean); HP[h]={m:e.notes[k],f:+e.fing[k]}; } }); drawHandOv(); }
+function minFing(e){ let k=-1; e.fing.forEach((f,i)=>{ if(f&&(k<0||+f<+e.fing[k])) k=i; }); return k; } // neo theo ngón số nhỏ nhất của hợp âm
+function handPosFrom(evs){ ['R','L'].forEach(h=>{ const e=evs.find(x=>!x.rest&&x.hand===h&&x.fing.some(Boolean)); if(e){ const k=minFing(e); HP[h]={m:e.notes[k],f:+e.fing[k]}; } }); drawHandOv(); }
 function handKeys(h,a){ // ngón 1..5 -> phần tử phím
   const d=h==='R'?1:-1, black=!WHITE.has(a.m%12), wl=whites.indexOf(black?a.m-1:a.m), out={};
   for(let k=1;k<=5;k++){ if(k===a.f){ out[k]=keyEls.get(a.m); continue; }
@@ -899,31 +913,48 @@ function handKeys(h,a){ // ngón 1..5 -> phần tử phím
   return out;
 }
 const GHOST={R:null,L:null}; // vị trí tay sắp phải dời tới (nốt rơi)
-function handPts(h,a,H){ const ks=handKeys(h,a), P={};
-  for(let k=1;k<=5;k++){ const el=ks[k]; if(!el) continue; const blk=el.classList.contains('b');
+function handPts(h,a,H,ov){ const ks=handKeys(h,a), P={};
+  for(let k=1;k<=5;k++){ const el=(ov&&ov[k])||ks[k]; if(!el) continue; const blk=el.classList.contains('b');
     P[k]={x:el.offsetLeft+el.offsetWidth/2, y:(blk?H*0.38:H*0.7)+(k===1?10:0)}; }
   return P; }
 function handMid(P){ const xs=[1,2,3,4,5].filter(k=>P[k]).map(k=>P[k].x); return xs.length?xs.reduce((s,x)=>s+x,0)/xs.length:0; }
+const SKIN='#F2C6A0', SKIN_D='#B97D57', NAIL='#FBE7DA';
 function drawHandOv(){
   const svg=$('#handov'), kb=$('#kb'), zone=$('#handzone'); if(!svg||!kb) return;
   if(zone.hidden||(!HP.R&&!HP.L)){ svg.innerHTML=''; return; }
-  const H=kb.offsetHeight, top=kb.offsetTop, Z=zone.offsetHeight, ww=keyEls.get(60).offsetWidth, fw=Math.max(13,ww*0.68);
+  const H=kb.offsetHeight, top=kb.offsetTop, Z=zone.offsetHeight, ww=keyEls.get(60).offsetWidth, fw=Math.max(13,ww*0.7);
   svg.style.top=top+'px'; svg.setAttribute('height',H+Z); svg.setAttribute('width',kb.offsetWidth);
   // màu đặt bằng style (Safari trên iPad không nhận var() trong thuộc tính fill/stroke)
   const col={R:'var(--felt)',L:'var(--brass)'}, act=new Set(); FING.forEach(x=>{ if(x.f) act.add(x.hand+x.f); });
+  const cap=(x1,y1,x2,y2,w,c)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${c};stroke-width:${w};stroke-linecap:round"/>`;
   let o='';
-  ['R','L'].forEach(h=>{ const a=HP[h]; if(!a) return; const P=handPts(h,a,H), c=col[h];
+  const ov={R:{},L:{}}; FING.forEach(x=>{ if(x.f) ov[x.hand][+x.f]=keyEls.get(x.m); });
+  ['R','L'].forEach(h=>{ const a=HP[h]; if(!a) return; const P=handPts(h,a,H,ov[h]), c=col[h];
     const xs=[2,3,4,5].filter(k=>P[k]).map(k=>P[k].x); if(!xs.length) return;
-    const pc=xs.reduce((s,x)=>s+x,0)/xs.length, lo=Math.min(...xs)-fw*0.55, hi=Math.max(...xs)+fw*0.55;
-    o+=`<rect x="${lo}" y="${H+3}" width="${hi-lo}" height="${Z+30}" rx="${fw*0.9}" style="fill:${c};fill-opacity:.35;stroke:${c};stroke-opacity:.75;stroke-width:1.5"/>`;
+    const pc=xs.reduce((s,x)=>s+x,0)/xs.length;
+    let lo=Math.min(...xs)-fw*0.62, hi=Math.max(...xs)+fw*0.62;
+    if(P[1]){ if(P[1].x<lo) lo-=fw*0.3; else hi+=fw*0.3; }
+    const pTop=H-2, pBot=H+Z*0.74, wr=fw*0.35; // lòng bàn tay, cổ tay hẹp hơn một chút
+    const base={}; for(let k=1;k<=5;k++){ const q=P[k]; if(!q) continue; base[k]=k===1?{x:q.x+(pc-q.x)*0.5,y:H+Z*0.42}:{x:q.x+(pc-q.x)*0.12,y:pTop+6}; }
+    const palm=`M${lo},${pTop+fw*0.6} Q${lo},${pTop} ${lo+fw*0.6},${pTop} L${hi-fw*0.6},${pTop} Q${hi},${pTop} ${hi},${pTop+fw*0.6} L${hi-wr},${pBot} L${lo+wr},${pBot} Z`;
+    // 1) viền: lòng bàn tay + các ngón; 2) phủ màu da lòng bàn tay (che đường viền gốc ngón); 3) màu da các ngón
+    o+=`<path d="${palm}" style="fill:${SKIN};stroke:${SKIN_D};stroke-width:1.6"/>`;
+    for(let k=1;k<=5;k++) if(P[k]) o+=cap(P[k].x,P[k].y,base[k].x,base[k].y,fw+3,SKIN_D);
+    o+=`<path d="${palm}" transform="translate(0,1.5)" style="fill:${SKIN}"/>`;
+    for(let k=1;k<=5;k++) if(P[k]) o+=cap(P[k].x,P[k].y,base[k].x,base[k].y,fw,SKIN);
+    // tay áo màu của tay (đỏ: phải, vàng: trái)
+    o+=`<rect x="${lo+wr-4}" y="${pBot-2}" width="${hi-lo-2*wr+8}" height="${Z}" rx="5" style="fill:${c}"/>`;
+    o+=`<rect x="${lo+wr-4}" y="${pBot-2}" width="${hi-lo-2*wr+8}" height="5" rx="2" style="fill:#fff;fill-opacity:.35"/>`;
+    // móng tay + số ngón
     for(let k=1;k<=5;k++){ const q=P[k]; if(!q) continue; const on=act.has(h+k);
-      const bx=k===1?q.x+(pc-q.x)*0.45:q.x+(pc-q.x)*0.2, by=k===1?H+Z*0.55:H+8;
-      o+=`<line x1="${q.x}" y1="${q.y}" x2="${bx}" y2="${by}" style="stroke:${c};stroke-opacity:${on?.9:.45};stroke-width:${fw};stroke-linecap:round"/>`;
-      o+=`<circle cx="${q.x}" cy="${q.y}" r="${fw*0.5}" style="fill:${on?c:'#FBFAF5'};stroke:${c};stroke-width:${on?2.5:1.5}"/>`;
-      o+=`<text class="tip" x="${q.x}" y="${q.y}" style="fill:${on?'#fff':'#1A2130'}">${k}</text>`; }
-    // sắp dời tay: bàn tay nét đứt ở vị trí mới + mũi tên chỉ hướng
+      o+=`<rect x="${q.x-fw*0.27}" y="${q.y-fw*0.42}" width="${fw*0.54}" height="${fw*0.5}" rx="${fw*0.2}" style="fill:${NAIL};stroke:${SKIN_D};stroke-width:.8"/>`;
+      const ny=q.y+fw*0.72, r=fw*0.42;
+      if(on) o+=`<circle cx="${q.x}" cy="${ny}" r="${r+4}" style="fill:${c};fill-opacity:.3"/>`;
+      o+=`<circle cx="${q.x}" cy="${ny}" r="${r}" style="fill:${on?c:'#fff'};stroke:${on?'#fff':'#1A2130'};stroke-width:${on?2:1.2}"/>`;
+      o+=`<text class="tip" x="${q.x}" y="${ny}" style="fill:${on?'#fff':'#1A2130'}">${k}</text>`; }
+    // sắp dời tay: đầu ngón nét đứt ở vị trí mới + mũi tên chỉ hướng
     const g=GHOST[h]; if(!g) return; const G=handPts(h,g,H);
-    for(let k=1;k<=5;k++){ const q0=G[k]; if(!q0) continue; const q={x:q0.x,y:q0.y-fw*1.15}; // cao hơn đầu ngón hiện tại để khỏi chồng
+    for(let k=1;k<=5;k++){ const q0=G[k]; if(!q0) continue; const q={x:q0.x,y:q0.y-fw*1.15};
       o+=`<circle cx="${q.x}" cy="${q.y}" r="${fw*0.5}" style="fill:${c};fill-opacity:.18;stroke:${c};stroke-width:2;stroke-dasharray:3 3"/>`;
       o+=`<text class="tip" x="${q.x}" y="${q.y}" style="fill:${c}">${k}</text>`; }
     const x1=handMid(P), x2=handMid(G), y=H+Z*0.5, dir=Math.sign(x2-x1)||1, ah=7;
@@ -931,6 +962,18 @@ function drawHandOv(){
     o+=`<path d="M${x2},${y} L${x2-dir*ah*1.6},${y-ah} L${x2-dir*ah*1.6},${y+ah} Z" style="fill:${c}"/>`;
   });
   svg.innerHTML=o;
+}
+// ---------- Dải nốt sắp tới: mỗi tay một hàng, ô đầu là nốt đang chờ bấm ----------
+const Q={evs:[],t:0,tol:1e-6,key:''};
+function qSet(evs,t,tol){ Q.evs=evs; Q.t=t; Q.tol=tol; qDraw(); }
+function qDraw(){
+  const per={}; ['R','L'].forEach(h=>{ per[h]=Q.evs.filter(e=>!e.rest&&e.hand===h&&e.t>=Q.t-Q.tol).sort((a,b)=>a.t-b.t).slice(0,6); });
+  const nowOf=h=>!!(per[h][0]&&per[h][0].t<=Q.t+0.05);
+  const key=Q.evs.length+'|'+['R','L'].map(h=>per[h].map(e=>Q.evs.indexOf(e)).join(',')+nowOf(h)).join('/');
+  if(key===Q.key) return; Q.key=key;
+  const hands=new Set(Q.evs.filter(e=>!e.rest).map(e=>e.hand));
+  ['R','L'].forEach(h=>{ $('#qrow-'+h).hidden=!hands.has(h);
+    $('#q-'+h).innerHTML=per[h].length?per[h].map((e,i)=>`<div class="qc${i?'':' first'}${i===0&&nowOf(h)?' now':''}" style="opacity:${i?Math.max(.3,1-i*.16):1}"><b>${e.notes.map(m=>esc(nm(m,'sol'))).join('·')}</b><small>${e.fing.some(Boolean)?'ngón '+e.fing.join('·'):'&nbsp;'}</small></div>`).join(''):'<span class="qend">hết bài</span>'; });
 }
 const FING=new Map(); // phím -> {m, hand, f}
 const evFing=e=>e.hand?e.notes.map((m,k)=>({m,hand:e.hand,f:e.fing[k]||''})):[];
@@ -940,15 +983,14 @@ function fingDel(ms){ ms.forEach(m=>FING.delete(m)); fingDraw(); }
 function fingDraw(){
   $$('#kb .fb').forEach(b=>b.remove());
   const on={R:[],L:[]};
-  FING.forEach(x=>{ if(x.f&&HP[x.hand]==null) HP[x.hand]={m:x.m,f:+x.f}; else if(x.f){ const ks=handKeys(x.hand,HP[x.hand]); if(ks[+x.f]!==keyEls.get(x.m)) HP[x.hand]={m:x.m,f:+x.f}; }
+  const lead={}; FING.forEach(x=>{ if(x.f&&(!lead[x.hand]||+x.f<+lead[x.hand].f)) lead[x.hand]=x; });
+  Object.values(lead).forEach(x=>{ const cur=HP[x.hand]; if(!cur||handKeys(x.hand,cur)[+x.f]!==keyEls.get(x.m)) HP[x.hand]={m:x.m,f:+x.f}; });
+  FING.forEach(x=>{
     const k=keyEls.get(x.m); if(k&&!(x.f&&HP[x.hand])){ const b=document.createElement('span'); b.className='fb '+x.hand; b.textContent=x.f; k.appendChild(b); } on[x.hand].push(x); });
-  ['R','L'].forEach(h=>{ const fs=new Set(on[h].map(x=>x.f));
-    $$('#hand-'+h+' .fg, #hand-'+h+' .n').forEach(el=>el.classList.toggle('on',fs.has(el.dataset.f)));
-    $('#hcap-'+h+' span').textContent=on[h].sort((a,b)=>a.m-b.m).map(x=>(x.f?'ngón '+x.f+' → ':'')+nm(x.m,'sol')).join(', '); });
   handbarSync(); drawHandOv();
 }
 function handbarSync(){ const hb=$('#handbar'), show=F.on||!!(act&&act.player); if(hb.hidden===show){ hb.hidden=!show; $('#handzone').hidden=!show; if(!show) HP.R=HP.L=null; fitDock(); drawHandOv(); } }
-function buildHands(){ $('#hand-L').setAttribute('viewBox','-4 0 104 82'); $('#hand-R').setAttribute('viewBox','-4 0 104 82'); $('#hand-L').innerHTML=handSVG('L'); $('#hand-R').innerHTML=handSVG('R'); setInterval(handbarSync,300); window.addEventListener('resize',drawHandOv); }
+function buildHands(){ setInterval(handbarSync,300); window.addEventListener('resize',drawHandOv); }
 function flashKey(m,cls,ms){const k=keyEls.get(m); if(!k) return; k.classList.add(cls); setTimeout(()=>k.classList.remove(cls),ms||380)}
 function ensureVisible(m){
   const k=keyEls.get(m), w=$('#kbwrap'); if(!k||w.scrollWidth<=w.clientWidth) return;
@@ -1268,7 +1310,7 @@ function stopAll(msg){
 }
 function runEvents(events,bpm,o){
   const a=audio(), spb=60/bpm, t0=a.currentTime+0.12, lead=o.countIn?o.beats*spb:0, st={kind:'demo',timeouts:[],voices:[],player:o.player||null,onStop:o.onStop};
-  act=st; if(o.player) handPosFrom(events);
+  act=st; if(o.player){ handPosFrom(events); Q.key=''; qSet(events,-1,0); }
   if(o.countIn) for(let i=0;i<o.beats;i++) click(t0+i*spb,i===0);
   const end=Math.max(...events.map(e=>e.t+e.d));
   if(o.metro){ for(let b=0;b<end;b+=1) click(t0+lead+b*spb, ((b-(o.pickup||0))%o.beats+o.beats)%o.beats===0); }
@@ -1277,7 +1319,7 @@ function runEvents(events,bpm,o){
     const ts=t0+lead+e.t*spb, dur=e.d*spb;
     e.notes.forEach(m=>st.voices.push(scheduleNote(m,ts,dur,e.vel)));
     const ms=(ts-a.currentTime)*1000;
-    st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('play');}); fingAdd(evFing(e)); if(e.notes[0]) ensureVisible(e.notes[0]); o.onEvent&&o.onEvent(e,true); },ms));
+    st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('play');}); fingAdd(evFing(e)); if(o.player) qSet(events,e.t,1e-6); if(e.notes[0]) ensureVisible(e.notes[0]); o.onEvent&&o.onEvent(e,true); },ms));
     st.timeouts.push(setTimeout(()=>{ e.notes.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.remove('play');}); fingDel(e.notes); o.onEvent&&o.onEvent(e,false); },ms+dur*1000-25));
   });
   st.timeouts.push(setTimeout(()=>{ if(act===st){ act=null; HP.R=HP.L=null; fingSet([]); o.onEnd&&o.onEnd(); } },(lead+end*spb)*1000+250));
@@ -1349,7 +1391,7 @@ function makePlayer(ex,host){
     const show=()=>{
       $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now'));
       const s=steps[st.i]; s.req.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('hint');}); ensureVisible([...s.req][0]);
-      s.es.forEach(e=>mark(e,true)); fingSet(s.es.flatMap(evFing));
+      s.es.forEach(e=>mark(e,true)); fingSet(s.es.flatMap(evFing)); Q.key=''; qSet(evs,s.t,1e-6);
       const fg=s.es.flatMap(e=>e.fing); p.setStatus(`Bước ${st.i+1}/${steps.length}: bấm ${[...s.req].map(m=>nm(m,'sol')).join(' + ')}${fg.length?' (ngón '+fg.join('·')+')':''} · sai ${st.err}`);
     };
     st.onNote=m=>{
@@ -2097,7 +2139,7 @@ function fallColors(){ const cs=getComputedStyle(document.documentElement), g=k=
 function fallGeo(){ F.geo.clear(); keyEls.forEach((k,m)=>F.geo.set(m,[k.offsetLeft,k.offsetWidth,k.classList.contains('b')])); }
 function sizeFall(){
   const cv=$('#fall'); if(cv.hidden) return;
-  const other=$('#dock').scrollHeight-cv.offsetHeight, H=Math.round(Math.max(window.innerHeight<560?110:150,Math.min(480,window.innerHeight-other-12)));
+  const other=$('#dock').scrollHeight-cv.offsetHeight, H=Math.round(Math.max(window.innerHeight<420?84:window.innerHeight<560?110:window.innerWidth<600?120:150,Math.min(480,window.innerHeight-other-12)));
   const W=$('#kbcol').clientWidth, dpr=window.devicePixelRatio||1;
   cv.style.height=H+'px'; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
   F.W=W; F.H=H; F.dpr=dpr; fallGeo(); fitDock(); fallDraw();
@@ -2114,12 +2156,15 @@ function fallReset(){
   F.steps=[...new Set(F.req.map(r=>r.t))].sort((a,b)=>a-b).map(t=>({t,req:F.req.filter(r=>r.t===t)}));
   F.shifts=[]; F.gkey='';
   ['R','L'].forEach(h=>{ let cur=null;
-    F.notes.filter(n=>n.hand===h&&n.sel&&n.f).sort((a,b)=>a.t-b.t||a.m-b.m).forEach(n=>{ const a={m:n.m,f:+n.f};
+    const ns=F.notes.filter(n=>n.hand===h&&n.sel&&n.f), ts=[...new Set(ns.map(n=>n.t))].sort((a,b)=>a-b);
+    ts.map(t=>ns.filter(n=>n.t===t).reduce((b,n)=>!b||+n.f<+b.f?n:b,null)).forEach(n=>{ const a={m:n.m,f:+n.f};
       if(!cur){ cur=a; return; }
       if(handKeys(h,cur)[a.f]!==keyEls.get(a.m)){ const P0=handPts(h,cur,100), P1=handPts(h,a,100);
         F.shifts.push({t:n.t,hand:h,from:cur,to:a,dir:Math.sign(handMid(P1)-handMid(P0))||1}); cur=a; } }); });
-  HP.R=HP.L=null; GHOST.R=GHOST.L=null; setHints(new Set()); handPosFrom(ex.events.filter(e=>fallSel(e))); fallUi(); fallDraw();
+  HP.R=HP.L=null; GHOST.R=GHOST.L=null; setHints(new Set()); handPosFrom(ex.events.filter(e=>fallSel(e))); F.qevs=ex.events.filter(e=>!e.rest&&fallSel(e)); Q.key=''; fallQ(); fallUi(); fallDraw();
 }
+function fallQ(){ if(!F.on||!F.qevs) return; const s=F.steps[F.si];
+  if(F.mode==='cho') qSet(F.qevs,s?s.t:F.ex.total+1,1e-6); else qSet(F.qevs,F.now,0.3); }
 // bàn tay mờ ở vị trí mới hiện trước chỗ dời tay khoảng 2 phách
 function fallGhost(){
   const g={R:null,L:null};
@@ -2197,7 +2242,7 @@ function fallLoop(ts){
       const same=h.size===F.hints.size&&[...h].every(m=>F.hints.has(m)); if(!same) setHints(h); if(ch) fallUi(); }
     if(F.now>F.ex.total+1) fallFinish();
   }
-  fallGhost(); fallDraw();
+  fallGhost(); fallQ(); fallDraw();
 }
 function fallDraw(){
   const cv=$('#fall'); if(!F.on||cv.hidden||!F.W||!F.ex) return;
