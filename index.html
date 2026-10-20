@@ -920,45 +920,10 @@ function handPts(h,a,H,ov){ const ks=handKeys(h,a), P={};
     P[k]={x:el.offsetLeft+el.offsetWidth/2, y:H*(blk?TIP_B[k]:TIP_W[k])}; }
   return P; }
 function handMid(P){ const xs=[1,2,3,4,5].filter(k=>P[k]).map(k=>P[k].x); return xs.length?xs.reduce((s,x)=>s+x,0)/xs.length:0; }
-const HAND_FILL='#FFFFFF', INK='#555555';
-// Một bàn tay là MỘT đường bao liền: cổ tay → ngón cái → từng ngón (đầu tròn, khe chữ U) → mép ngón út → cổ tay.
-function handOutline(h,P,H,Z,fw){
-  const side=h==='R'?-1:1, f=(x,y)=>x.toFixed(1)+' '+y.toFixed(1);
-  const kY=H+Math.min(10,Z*0.13), bot=H+Z;
-  const KN={2:0,3:-2,4:0,5:7};
-  const pc=[2,3,4,5].reduce((s,k)=>s+P[k].x,0)/4;
-  const D={};
-  [2,3,4,5].forEach(k=>{ const T=P[k], B={x:T.x+(pc-T.x)*0.2, y:kY+KN[k]};
-    const L=Math.hypot(T.x-B.x,T.y-B.y), ux=(T.x-B.x)/L, uy=(T.y-B.y)/L, nx=-uy, ny=ux;
-    const wt=fw*(k===5?0.66:0.74), wb=fw*(k===5?0.7:0.78);
-    D[k]={T,B,L,ux,uy,wt,lt:{x:T.x-nx*wt/2,y:T.y-ny*wt/2}, rt:{x:T.x+nx*wt/2,y:T.y+ny*wt/2},
-          lb:{x:B.x-nx*wb/2,y:B.y-ny*wb/2}, rb:{x:B.x+nx*wb/2,y:B.y+ny*wb/2}}; });
-  // ngón cái: khe chữ V sâu sát gốc ngón trỏ, gốc ngoài rộng ở cạnh bàn tay, chĩa chéo lên phím
-  const i2=side<0?D[2].lb:D[2].rb;
-  const A=bot-kY, V={x:i2.x-side*fw*0.1, y:kY+Math.min(fw*0.55,A*0.2)}, O={x:V.x+side*fw*1.15, y:Math.min(V.y+fw*1.15,bot-A*0.2)};
-  const T1=P[1], M={x:(V.x+O.x)/2,y:(V.y+O.y)/2}, L1=Math.hypot(T1.x-M.x,T1.y-M.y);
-  const u1x=(T1.x-M.x)/L1, u1y=(T1.y-M.y)/L1, n1x=-u1y, n1y=u1x, w1=fw*1.08;
-  const tA={x:T1.x-n1x*w1/2,y:T1.y-n1y*w1/2}, tB={x:T1.x+n1x*w1/2,y:T1.y+n1y*w1/2};
-  D[1]={T:T1,B:M,L:L1,ux:u1x,uy:u1y,wt:w1};
-  const tIn=side<0?tB:tA, tOut=side<0?tA:tB; // mép trong (phía ngón trỏ) / mép ngoài của ngón cái
-  // cổ tay: mép ngón út thẳng xuống, mép ngón cái lõm vào một chút
-  const p5=side<0?D[5].rb:D[5].lb, eX=p5.x-side*fw*0.05;
-  const wT=O.x-side*fw*0.35;                   // chân mép phía ngón cái ở đáy
-  const tipArc=(b,r)=>`A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${f(b.x,b.y)}`;
-  const gap=(a,b)=>`A${(Math.abs(b.x-a.x)/2+0.5).toFixed(1)} ${(Math.abs(b.x-a.x)/2+0.5).toFixed(1)} 0 0 0 ${f(b.x,b.y)}`;
-  const fingers=side<0?[2,3,4,5]:[5,4,3,2];
-  const run=()=>{ let t=''; fingers.forEach((k,i)=>{ const g=D[k]; if(i) t+=gap(D[fingers[i-1]].rb,g.lb)+' ';
-      t+=`L${f(g.lt.x,g.lt.y)} ${tipArc(g.rt,g.wt/2)} L${f(g.rb.x,g.rb.y)} `; }); return t; };
-  let d;
-  if(side<0){ // tay phải: ngón cái bên trái
-    d=`M${f(wT,bot)} Q${f(O.x+fw*0.3,O.y+fw*0.9)} ${f(O.x,O.y)} L${f(tOut.x,tOut.y)} ${tipArc(tIn,w1/2)} L${f(V.x,V.y)} L${f(D[2].lb.x,D[2].lb.y)} `;
-    d+=run()+`L${f(eX,kY+fw*1.6)} L${f(eX,bot)} Z`;
-  } else {    // tay trái: ngón cái bên phải
-    d=`M${f(eX,bot)} L${f(eX,kY+fw*1.6)} L${f(D[5].lb.x,D[5].lb.y)} `+run();
-    d+=`L${f(V.x,V.y)} L${f(tIn.x,tIn.y)} ${tipArc(tOut,w1/2)} L${f(O.x,O.y)} Q${f(O.x-fw*0.3,O.y+fw*0.9)} ${f(wT,bot)} Z`;
-  }
-  return {d,D,kY,bot,side};
-}
+// Bàn tay là ẢNH thầy vẽ (tay phải, thấy ngón cái bên trái); tay trái dùng ảnh lật gương.
+const HAND_IMG='data:image/png;base64,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', HIMG_W=259, HIMG_H=292, INK='#555555';
+// điểm chạm phím của từng đầu ngón trong ảnh (pixel ảnh); trỏ → út cách nhau đúng 3 phím trắng
+const HIMG_TIP={1:[16,155],2:[77,45],3:[142,18],4:[200,45],5:[244,88]};
 function drawHandOv(){
   const svg=$('#handov'), kb=$('#kb'), zone=$('#handzone'); if(!svg||!kb) return;
   if(zone.hidden||(!HP.R&&!HP.L)){ svg.innerHTML=''; return; }
@@ -968,13 +933,15 @@ function drawHandOv(){
   const col={R:'var(--felt)',L:'var(--brass)'}, act=new Set(); FING.forEach(x=>{ if(x.f) act.add(x.hand+x.f); });
   const ov={R:{},L:{}}; FING.forEach(x=>{ if(x.f) ov[x.hand][+x.f]=keyEls.get(x.m); });
   let o='';
-  ['R','L'].forEach(h=>{ const a=HP[h]; if(!a) return; const P=handPts(h,a,H,ov[h]), c=col[h];
-    if(![1,2,3,4,5].every(k=>P[k])) return; // sát mép bàn phím: không đủ chỗ vẽ cả bàn tay
-    const G0=handOutline(h,P,H,Z,fw), D=G0.D;
-    o+=`<path d="${G0.d}" style="fill:${HAND_FILL};stroke:${INK};stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round"/>`;
-    // số ngón: vòng tròn trên thân ngón, ngón cần bấm tô màu tay
-    [1,2,3,4,5].forEach(k=>{ const g=D[k], on=act.has(h+k), r=fw*0.4, t=k===1?0.3:0.24;
-      const nx=g.T.x-g.ux*g.L*t, ny=g.T.y-g.uy*g.L*t;
+  ['R','L'].forEach(h=>{ const a=HP[h]; if(!a) return; const N=handPts(h,a,H), P=handPts(h,a,H,ov[h]), c=col[h];
+    if(!N[2]||!N[5]) return; // sát mép bàn phím: không đủ chỗ đặt bàn tay
+    const sg=h==='R'?1:-1, sc=Math.abs(N[5].x-N[2].x)/(HIMG_TIP[5][0]-HIMG_TIP[2][0]);
+    const x0=N[2].x-sg*HIMG_TIP[2][0]*sc, y0=H*0.45-HIMG_TIP[2][1]*sc;
+    o+=`<g transform="translate(${x0.toFixed(1)} ${y0.toFixed(1)}) scale(${(sg*sc).toFixed(4)} ${sc.toFixed(4)})"><image href="${HAND_IMG}" width="${HIMG_W}" height="${HIMG_H}"/></g>`;
+    // số ngón ở đầu ngón trong ảnh; ngón đang bấm phím xa hơn thế tay (thế tay mở rộng) thì đặt số ngay trên phím đó
+    [1,2,3,4,5].forEach(k=>{ const on=act.has(h+k), r=fw*0.4;
+      let nx=x0+sg*HIMG_TIP[k][0]*sc, ny=y0+HIMG_TIP[k][1]*sc;
+      if(P[k]&&N[k]&&Math.abs(P[k].x-N[k].x)>2){ nx=P[k].x; ny=P[k].y; }
       if(on) o+=`<circle cx="${nx}" cy="${ny}" r="${r+4}" style="fill:${c};fill-opacity:.35"/>`;
       o+=`<circle cx="${nx}" cy="${ny}" r="${r}" style="fill:${on?c:'#fff'};stroke:${on?'#fff':INK};stroke-width:${on?2:1.1}"/>`;
       o+=`<text class="tip" x="${nx}" y="${ny}" style="fill:${on?'#fff':INK}">${k}</text>`; });
