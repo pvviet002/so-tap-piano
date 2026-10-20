@@ -915,7 +915,7 @@ function handKeys(h,a){ // ngón 1..5 -> phần tử phím
 const GHOST={R:null,L:null}; // vị trí tay sắp phải dời tới (nốt rơi)
 function handPts(h,a,H,ov){ const ks=handKeys(h,a), P={};
   for(let k=1;k<=5;k++){ const el=(ov&&ov[k])||ks[k]; if(!el) continue; const blk=el.classList.contains('b');
-    P[k]={x:el.offsetLeft+el.offsetWidth/2, y:(blk?H*0.36:H*0.67)+(k===1?H*0.07:0)}; }
+    P[k]={x:el.offsetLeft+el.offsetWidth/2, y:k===1?(blk?H*0.5:H*0.86):(blk?H*0.36:H*0.67)}; }
   return P; }
 function handMid(P){ const xs=[1,2,3,4,5].filter(k=>P[k]).map(k=>P[k].x); return xs.length?xs.reduce((s,x)=>s+x,0)/xs.length:0; }
 const HAND_FILL='#FFFFFF', INK='#555555';
@@ -933,9 +933,9 @@ function handOutline(h,P,H,Z,fw){
           lb:{x:B.x-nx*wb/2,y:B.y-ny*wb/2}, rb:{x:B.x+nx*wb/2,y:B.y+ny*wb/2}}; });
   // ngón cái: khe chữ V sâu sát gốc ngón trỏ, gốc ngoài rộng ở cạnh bàn tay, chĩa chéo lên phím
   const i2=side<0?D[2].lb:D[2].rb;
-  const A=bot-kY, V={x:i2.x-side*fw*0.15, y:kY+Math.min(fw*1.9,A*0.42)}, O={x:V.x+side*fw*0.8, y:Math.min(V.y+fw*1.3,bot-A*0.18)};
+  const A=bot-kY, V={x:i2.x-side*fw*0.1, y:kY+Math.min(fw*0.55,A*0.2)}, O={x:V.x+side*fw*1.15, y:Math.min(V.y+fw*1.15,bot-A*0.2)};
   const T1=P[1], M={x:(V.x+O.x)/2,y:(V.y+O.y)/2}, L1=Math.hypot(T1.x-M.x,T1.y-M.y);
-  const u1x=(T1.x-M.x)/L1, u1y=(T1.y-M.y)/L1, n1x=-u1y, n1y=u1x, w1=fw*0.8;
+  const u1x=(T1.x-M.x)/L1, u1y=(T1.y-M.y)/L1, n1x=-u1y, n1y=u1x, w1=fw*1.08;
   const tA={x:T1.x-n1x*w1/2,y:T1.y-n1y*w1/2}, tB={x:T1.x+n1x*w1/2,y:T1.y+n1y*w1/2};
   D[1]={T:T1,B:M,L:L1,ux:u1x,uy:u1y,wt:w1};
   const tIn=side<0?tB:tA, tOut=side<0?tA:tB; // mép trong (phía ngón trỏ) / mép ngoài của ngón cái
