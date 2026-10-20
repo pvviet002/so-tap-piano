@@ -932,12 +932,16 @@ function drawHandOv(){
   // màu đặt bằng style (Safari trên iPad không nhận var() trong thuộc tính fill/stroke)
   const col={R:'var(--felt)',L:'var(--brass)'}, act=new Set(); FING.forEach(x=>{ if(x.f) act.add(x.hand+x.f); });
   const ov={R:{},L:{}}; FING.forEach(x=>{ if(x.f) ov[x.hand][+x.f]=keyEls.get(x.m); });
-  let o='';
+  let o=`<defs><clipPath id="kbclip"><rect x="0" y="0" width="${kb.offsetWidth}" height="${H}"/></clipPath></defs>`;
   ['R','L'].forEach(h=>{ const a=HP[h]; if(!a) return; const N=handPts(h,a,H), P=handPts(h,a,H,ov[h]), c=col[h];
     if(!N[2]||!N[5]) return; // sát mép bàn phím: không đủ chỗ đặt bàn tay
     const sg=h==='R'?1:-1, sc=Math.abs(N[5].x-N[2].x)/(HIMG_TIP[5][0]-HIMG_TIP[2][0]);
     const x0=N[2].x-sg*HIMG_TIP[2][0]*sc, y0=H*0.45-HIMG_TIP[2][1]*sc;
-    o+=`<g transform="translate(${x0.toFixed(1)} ${y0.toFixed(1)}) scale(${(sg*sc).toFixed(4)} ${sc.toFixed(4)})"><image href="${HAND_IMG}" width="${HIMG_W}" height="${HIMG_H}"/></g>`;
+    // ảnh hở đáy: nối lòng bàn tay thẳng xuống tới mép dưới phím (hai cạnh x=42, x=262 trong ảnh), cắt tại mép đó
+    const ext=Math.max(0,(H-y0)/sc-HIMG_H)+2, yb=HIMG_H-1;
+    o+=`<g clip-path="url(#kbclip)"><g transform="translate(${x0.toFixed(1)} ${y0.toFixed(1)}) scale(${(sg*sc).toFixed(4)} ${sc.toFixed(4)})"><image href="${HAND_IMG}" width="${HIMG_W}" height="${HIMG_H}"/>`
+      +`<rect x="46" y="${yb}" width="212" height="${ext.toFixed(1)}" style="fill:#fff"/>`
+      +`<path d="M42 ${yb} v${ext.toFixed(1)} M262 ${yb} v${ext.toFixed(1)}" style="fill:none;stroke:#565656;stroke-width:9"/></g></g>`;
     // số ngón ở đầu ngón trong ảnh; ngón đang bấm phím xa hơn thế tay (thế tay mở rộng) thì đặt số ngay trên phím đó
     [1,2,3,4,5].forEach(k=>{ const on=act.has(h+k), r=fw*0.4;
       let nx=x0+sg*HIMG_TIP[k][0]*sc, ny=y0+HIMG_TIP[k][1]*sc;
