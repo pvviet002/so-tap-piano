@@ -915,49 +915,78 @@ function handKeys(h,a){ // ngón 1..5 -> phần tử phím
 const GHOST={R:null,L:null}; // vị trí tay sắp phải dời tới (nốt rơi)
 function handPts(h,a,H,ov){ const ks=handKeys(h,a), P={};
   for(let k=1;k<=5;k++){ const el=(ov&&ov[k])||ks[k]; if(!el) continue; const blk=el.classList.contains('b');
-    P[k]={x:el.offsetLeft+el.offsetWidth/2, y:(blk?H*0.38:H*0.7)+(k===1?10:0)}; }
+    P[k]={x:el.offsetLeft+el.offsetWidth/2, y:(blk?H*0.36:H*0.67)+(k===1?H*0.07:0)}; }
   return P; }
 function handMid(P){ const xs=[1,2,3,4,5].filter(k=>P[k]).map(k=>P[k].x); return xs.length?xs.reduce((s,x)=>s+x,0)/xs.length:0; }
-const SKIN='#F2C6A0', SKIN_D='#B97D57', NAIL='#FBE7DA';
+const SKIN='#F4CBA7', SKIN_D='#B47A55', SKIN_S='#E3AE86', NAIL='#FCEBDD';
+// một ngón thon: gốc rộng wb, đầu ngón tròn rộng wt; trả về [đường tô, đường viền hở đáy]
+function fingerPath(tx,ty,bx,by,wt,wb){
+  const L=Math.hypot(tx-bx,ty-by)||1, ux=(tx-bx)/L, uy=(ty-by)/L, nx=-uy, ny=ux;
+  const p=(x,y)=>x.toFixed(1)+','+y.toFixed(1), r=wt/2;
+  const bl=p(bx-nx*wb/2,by-ny*wb/2), br=p(bx+nx*wb/2,by+ny*wb/2), tl=p(tx-nx*r,ty-ny*r), tr=p(tx+nx*r,ty+ny*r);
+  const arc=`A${r.toFixed(1)},${r.toFixed(1)} 0 0 1 ${tr}`;
+  return [`M${bl} L${tl} ${arc} L${br} Z`, `M${bl} L${tl} ${arc} L${br}`];
+}
 function drawHandOv(){
   const svg=$('#handov'), kb=$('#kb'), zone=$('#handzone'); if(!svg||!kb) return;
   if(zone.hidden||(!HP.R&&!HP.L)){ svg.innerHTML=''; return; }
-  const H=kb.offsetHeight, top=kb.offsetTop, Z=zone.offsetHeight, ww=keyEls.get(60).offsetWidth, fw=Math.max(13,ww*0.7);
+  const H=kb.offsetHeight, top=kb.offsetTop, Z=zone.offsetHeight, ww=keyEls.get(60).offsetWidth, fw=Math.max(13,ww*0.72);
   svg.style.top=top+'px'; svg.setAttribute('height',H+Z); svg.setAttribute('width',kb.offsetWidth);
   // màu đặt bằng style (Safari trên iPad không nhận var() trong thuộc tính fill/stroke)
   const col={R:'var(--felt)',L:'var(--brass)'}, act=new Set(); FING.forEach(x=>{ if(x.f) act.add(x.hand+x.f); });
-  const cap=(x1,y1,x2,y2,w,c)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${c};stroke-width:${w};stroke-linecap:round"/>`;
-  let o='';
   const ov={R:{},L:{}}; FING.forEach(x=>{ if(x.f) ov[x.hand][+x.f]=keyEls.get(x.m); });
+  const SK=`fill:${SKIN}`, OUT=`fill:none;stroke:${SKIN_D};stroke-width:1.4;stroke-linejoin:round`;
+  let o='';
   ['R','L'].forEach(h=>{ const a=HP[h]; if(!a) return; const P=handPts(h,a,H,ov[h]), c=col[h];
-    const xs=[2,3,4,5].filter(k=>P[k]).map(k=>P[k].x); if(!xs.length) return;
-    const pc=xs.reduce((s,x)=>s+x,0)/xs.length;
-    let lo=Math.min(...xs)-fw*0.62, hi=Math.max(...xs)+fw*0.62;
-    if(P[1]){ if(P[1].x<lo) lo-=fw*0.3; else hi+=fw*0.3; }
-    const pTop=H-2, pBot=H+Z*0.74, wr=fw*0.35; // lòng bàn tay, cổ tay hẹp hơn một chút
-    const base={}; for(let k=1;k<=5;k++){ const q=P[k]; if(!q) continue; base[k]=k===1?{x:q.x+(pc-q.x)*0.5,y:H+Z*0.42}:{x:q.x+(pc-q.x)*0.12,y:pTop+6}; }
-    const palm=`M${lo},${pTop+fw*0.6} Q${lo},${pTop} ${lo+fw*0.6},${pTop} L${hi-fw*0.6},${pTop} Q${hi},${pTop} ${hi},${pTop+fw*0.6} L${hi-wr},${pBot} L${lo+wr},${pBot} Z`;
-    // 1) viền: lòng bàn tay + các ngón; 2) phủ màu da lòng bàn tay (che đường viền gốc ngón); 3) màu da các ngón
-    o+=`<path d="${palm}" style="fill:${SKIN};stroke:${SKIN_D};stroke-width:1.6"/>`;
-    for(let k=1;k<=5;k++) if(P[k]) o+=cap(P[k].x,P[k].y,base[k].x,base[k].y,fw+3,SKIN_D);
-    o+=`<path d="${palm}" transform="translate(0,1.5)" style="fill:${SKIN}"/>`;
-    for(let k=1;k<=5;k++) if(P[k]) o+=cap(P[k].x,P[k].y,base[k].x,base[k].y,fw,SKIN);
-    // tay áo màu của tay (đỏ: phải, vàng: trái)
-    o+=`<rect x="${lo+wr-4}" y="${pBot-2}" width="${hi-lo-2*wr+8}" height="${Z}" rx="5" style="fill:${c}"/>`;
-    o+=`<rect x="${lo+wr-4}" y="${pBot-2}" width="${hi-lo-2*wr+8}" height="5" rx="2" style="fill:#fff;fill-opacity:.35"/>`;
-    // móng tay + số ngón
-    for(let k=1;k<=5;k++){ const q=P[k]; if(!q) continue; const on=act.has(h+k);
-      o+=`<rect x="${q.x-fw*0.27}" y="${q.y-fw*0.42}" width="${fw*0.54}" height="${fw*0.5}" rx="${fw*0.2}" style="fill:${NAIL};stroke:${SKIN_D};stroke-width:.8"/>`;
-      const ny=q.y+fw*0.72, r=fw*0.42;
-      if(on) o+=`<circle cx="${q.x}" cy="${ny}" r="${r+4}" style="fill:${c};fill-opacity:.3"/>`;
-      o+=`<circle cx="${q.x}" cy="${ny}" r="${r}" style="fill:${on?c:'#fff'};stroke:${on?'#fff':'#1A2130'};stroke-width:${on?2:1.2}"/>`;
-      o+=`<text class="tip" x="${q.x}" y="${ny}" style="fill:${on?'#fff':'#1A2130'}">${k}</text>`; }
+    const ks=[2,3,4,5].filter(k=>P[k]); if(!ks.length) return;
+    const pc=ks.reduce((s,k)=>s+P[k].x,0)/ks.length;
+    const side=h==='R'?-1:1; // phía ngón cái: tay phải ở bên trái, tay trái ở bên phải
+    const kY=H+Math.min(6,Z*0.08), yW=H+Z*0.66;   // hàng khớp ngón (mép trước phím) và cổ tay
+    const KN={2:0,3:-3,4:1,5:7};                   // khớp ngón giữa cao nhất, ngón út thấp nhất
+    const WID={2:1,3:1.02,4:0.96,5:0.84};
+    const base={}; ks.forEach(k=>{ base[k]={x:P[k].x+(pc-P[k].x)*0.16, y:kY+KN[k]}; });
+    const xs=ks.map(k=>base[k].x), lo=Math.min(...xs)-fw*0.62, hi=Math.max(...xs)+fw*0.62;
+    const tS=side<0?lo:hi, oS=side<0?hi:lo;        // mép phía ngón cái / phía ngón út
+    const wC=(lo+hi)/2+side*fw*0.15, wH=(hi-lo)*0.4; // cổ tay hẹp hơn lòng bàn tay
+    const wT=wC+side*wH, wO=wC-side*wH;
+    // tay áo
+    const mn=Math.min(wO,wT), mx=Math.max(wO,wT);
+    o+=`<path d="M${mn-6},${yW-3} L${mx+6},${yW-3} L${mx+9},${H+Z+4} L${mn-9},${H+Z+4} Z" style="fill:${c}"/>`;
+    o+=`<rect x="${mn-7}" y="${yW-4}" width="${mx-mn+14}" height="5" rx="2" style="fill:#fff;fill-opacity:.4"/>`;
+    // ngón cái: mọc từ cạnh bàn tay gần cổ tay, cong ra ngoài rồi chĩa lên phím
+    if(P[1]){ const T=P[1], B={x:tS-side*fw*0.35, y:yW-(yW-kY)*0.28};
+      const C={x:(B.x+T.x)/2+side*fw*0.55, y:(B.y+T.y)/2+fw*0.25};
+      const d=`M${B.x},${B.y} Q${C.x},${C.y} ${T.x},${T.y}`;
+      o+=`<path d="${d}" style="fill:none;stroke:${SKIN_D};stroke-width:${fw*1.08+2.8};stroke-linecap:round"/>`;
+      o+=`<path d="${d}" style="fill:none;stroke:${SKIN};stroke-width:${fw*1.08};stroke-linecap:round"/>`; }
+    // lòng (mu) bàn tay: mép trên qua các khớp ngón, phía ngón cái phồng ra
+    const bulge={x:tS+side*fw*0.45, y:kY+(yW-kY)*0.55};
+    const tpY=kY+(KN[5]||0)+fw*0.15, oIn=oS+side*fw*0.95; // góc trên phía ngón út bo tròn, không lòi gờ
+    const palm=`M${oS},${tpY+fw*1.1} Q${oS},${tpY} ${oIn},${tpY} L${tS},${kY} Q${bulge.x},${bulge.y} ${wT},${yW} L${wO},${yW} Q${oS+side*fw*0.1},${kY+(yW-kY)*0.7} ${oS},${tpY+fw*1.1} Z`;
+    o+=`<path d="${palm}" style="${SK};stroke:${SKIN_D};stroke-width:1.4;stroke-linejoin:round"/>`;
+    // bốn ngón
+    ks.forEach(k=>{ const q=P[k], b=base[k], wt=fw*0.8*WID[k], wb=fw*0.98*WID[k];
+      const [fill,line]=fingerPath(q.x,q.y,b.x,b.y+fw*0.5,wt,wb);
+      o+=`<path d="${fill}" style="${SK}"/><path d="${line}" style="${OUT}"/>`;
+      // khớp giữa ngón + gợn khớp gốc ngón
+      const mx=q.x+(b.x-q.x)*0.55, my=q.y+(b.y-q.y)*0.55;
+      o+=`<path d="M${mx-wt*0.28},${my} Q${mx},${my+2.5} ${mx+wt*0.28},${my}" style="fill:none;stroke:${SKIN_D};stroke-width:.9;opacity:.6"/>`;
+      o+=`<path d="M${b.x-wb*0.32},${b.y+5} Q${b.x},${b.y} ${b.x+wb*0.32},${b.y+5}" style="fill:none;stroke:${SKIN_S};stroke-width:1.6;opacity:.9"/>`; });
+    // móng tay
+    for(let k=1;k<=5;k++){ const q=P[k]; if(!q) continue; const w=fw*0.5*(WID[k]||1.05);
+      o+=`<rect x="${q.x-w/2}" y="${q.y-fw*0.36}" width="${w}" height="${fw*0.5}" rx="${w*0.4}" style="fill:${NAIL};stroke:${SKIN_D};stroke-width:.7"/>`; }
+    // số ngón: vòng tròn trên thân ngón, ngón cần bấm tô màu tay
+    for(let k=1;k<=5;k++){ const q=P[k]; if(!q) continue; const on=act.has(h+k), r=fw*0.42;
+      const ny=k===1?q.y+fw*0.85:q.y+fw*0.95, nx=k===1?q.x+side*fw*0.15:q.x;
+      if(on) o+=`<circle cx="${nx}" cy="${ny}" r="${r+4}" style="fill:${c};fill-opacity:.35"/>`;
+      o+=`<circle cx="${nx}" cy="${ny}" r="${r}" style="fill:${on?c:'#fff'};stroke:${on?'#fff':'#1A2130'};stroke-width:${on?2:1.1}"/>`;
+      o+=`<text class="tip" x="${nx}" y="${ny}" style="fill:${on?'#fff':'#1A2130'}">${k}</text>`; }
     // sắp dời tay: đầu ngón nét đứt ở vị trí mới + mũi tên chỉ hướng
     const g=GHOST[h]; if(!g) return; const G=handPts(h,g,H);
     for(let k=1;k<=5;k++){ const q0=G[k]; if(!q0) continue; const q={x:q0.x,y:q0.y-fw*1.15};
       o+=`<circle cx="${q.x}" cy="${q.y}" r="${fw*0.5}" style="fill:${c};fill-opacity:.18;stroke:${c};stroke-width:2;stroke-dasharray:3 3"/>`;
       o+=`<text class="tip" x="${q.x}" y="${q.y}" style="fill:${c}">${k}</text>`; }
-    const x1=handMid(P), x2=handMid(G), y=H+Z*0.5, dir=Math.sign(x2-x1)||1, ah=7;
+    const x1=handMid(P), x2=handMid(G), y=H+Z*0.45, dir=Math.sign(x2-x1)||1, ah=7;
     o+=`<line x1="${x1}" y1="${y}" x2="${x2-dir*ah}" y2="${y}" style="stroke:${c};stroke-width:3"/>`;
     o+=`<path d="M${x2},${y} L${x2-dir*ah*1.6},${y-ah} L${x2-dir*ah*1.6},${y+ah} Z" style="fill:${c}"/>`;
   });
