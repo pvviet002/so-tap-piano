@@ -136,11 +136,24 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .player .ph{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
 .player .ph b{font-weight:600}
 .status{font-size:.88rem;color:var(--muted);min-height:1.4em}
-.r-live{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;margin:8px 0}
+.r-live{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 8px}
+.r-top{margin-bottom:8px}
+.r-go{min-width:150px}
+.btn.r-go.on{background:var(--bad);border-color:var(--bad);color:#fff}
+.r-set{gap:8px;margin-top:4px}
+.r-note{margin-top:10px;font-size:.88rem}
+.r-note > summary{display:block;padding:4px 0;color:var(--muted);font-weight:600;cursor:pointer}
+.r-note > summary::before,.r-pre > summary::before{content:'▸ '}
+.r-note[open] > summary::before,.r-pre[open] > summary::before{content:'▾ '}
+.r-note p{margin:4px 0 0;color:var(--muted)}
+.r-out{scroll-margin-top:64px}
+.r-tools{gap:8px;margin-top:6px}
+.r-grp{display:inline-flex;gap:4px}
+.r-send{gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.r-hint{font-size:.86rem;margin:6px 0 0}
 .r-sheet{display:flex;flex-direction:column;gap:2px;overflow-x:auto;padding-bottom:4px}
 .r-item{gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .r-item b{flex:1 1 auto;min-width:0}
-.r-export{border-top:1px solid var(--line);margin-top:12px;padding-top:4px}
 .r-title{display:flex;align-items:center;gap:8px;flex:1 1 260px;min-width:0;font-size:.9rem;color:var(--muted)}
 .r-title input{flex:1 1 auto;min-width:0}
 .r-pre > summary{display:block;padding:6px 0;color:var(--felt);font-weight:600;cursor:pointer}
@@ -581,8 +594,18 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
 <section class="pane" id="p-ghinhac" hidden>
   <div class="card">
     <h2>Ghi bản nhạc</h2>
-    <p class="muted">Em đàn, trang nghe rồi viết ra khuông nhạc đúng như em vừa chơi. Đàn trên đàn thật thì bật <b>Nghe đàn thật</b>; đàn trên đàn ảo bên dưới cũng được.</p>
-    <div class="row">
+    <p class="muted">Em đàn, trang nghe rồi viết ra khuông nhạc. Đàn thật thì bật <b>Nghe đàn thật</b>; đàn ảo bên dưới cũng được.</p>
+    <div class="row r-top">
+      <label class="r-title">Bài định đàn <input type="text" id="r-title" maxlength="60" placeholder="ví dụ: Happy Birthday (không bắt buộc)"></label>
+    </div>
+    <div class="row r-top">
+      <button class="btn pri r-go" id="r-go">● Bắt đầu ghi</button>
+      <button class="btn mic-btn" aria-pressed="false">Nghe đàn thật</button>
+      <span class="micmeter" aria-hidden="true"><i></i></span>
+      <span class="status" id="r-status"></span>
+    </div>
+    <div class="r-live" id="r-live" aria-live="polite" hidden></div>
+    <div class="row r-set">
       <div class="seg" id="r-mode" role="group" aria-label="Cách giữ nhịp">
         <button data-v="tudo" aria-pressed="true">Đàn tự do</button>
         <button data-v="nhip" aria-pressed="false">Theo máy đếm nhịp</button>
@@ -594,49 +617,36 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       </div>
       <label class="tempo" id="r-bpm-box" hidden>Nhịp <input type="range" id="r-bpm" min="40" max="120" value="72"><span class="num" id="r-bpm-v">72</span></label>
     </div>
-    <div class="row">
-      <button class="btn pri" id="r-go" style="min-width:130px">Bắt đầu ghi</button>
-      <button class="btn mic-btn" aria-pressed="false">Nghe đàn thật</button>
-      <span class="micmeter" aria-hidden="true"><i></i></span>
-      <span class="status" id="r-status"></span>
-    </div>
-    <div class="r-live" id="r-live" aria-live="polite"></div>
-    <p class="muted" style="font-size:.86rem">Micro nghe rõ nhất khi em đàn <b>từng nốt một</b> (giai điệu một tay). Đàn hợp âm thì micro chỉ ghi được nốt vang to nhất; đàn ảo thì ghi đủ cả hợp âm. Trên trang claude.ai micro không chạy, hãy mở bản web <b>so-tap-piano.vercel.app</b>.</p>
+    <details class="r-note"><summary>Lưu ý khi ghi bằng micro</summary>
+      <p>Micro nghe rõ nhất khi em đàn <b>từng nốt một</b> (giai điệu một tay). Đàn hợp âm thì micro chỉ ghi được nốt vang to nhất; đàn ảo thì ghi đủ. Đè pedal thì trang không biết lúc em thả phím nên các nốt viết liền nhau. Trên trang claude.ai micro không chạy: mở bản web <b>so-tap-piano.vercel.app</b>.</p>
+    </details>
   </div>
-  <div class="card" id="r-out" hidden>
+  <div class="card r-out" id="r-out" hidden>
     <div class="row" style="justify-content:space-between"><h3>Bản nhạc em vừa đàn</h3><span class="muted" id="r-info"></span></div>
     <div class="r-sheet" id="r-sheet"></div>
-    <div class="row">
-      <button class="btn" id="r-play">Nghe lại</button>
-      <button class="btn" id="r-longer">Viết nốt dài hơn</button>
-      <button class="btn" id="r-shorter">Viết nốt ngắn hơn</button>
-      <label class="tempo"><input type="checkbox" id="r-lab" checked> Ghi tên nốt</label>
+    <div class="row r-tools">
+      <button class="btn sm" id="r-play">Nghe lại</button>
+      <span class="r-grp"><button class="btn sm" id="r-longer" title="Trang đoán nhầm tốc độ: viết mọi nốt dài gấp đôi">Nốt dài hơn</button><button class="btn sm" id="r-shorter" title="Trang đoán nhầm tốc độ: viết mọi nốt ngắn một nửa">Nốt ngắn hơn</button></span>
+      <label class="tempo"><input type="checkbox" id="r-lab" checked> Tên nốt</label>
+    </div>
+    <div class="row r-send">
+      <button class="btn pri" id="r-copy">Sao chép để gửi Claude</button>
+      <button class="btn" id="r-dl">Tải tệp .txt</button>
       <button class="btn" id="r-save">Lưu bản này</button>
     </div>
-    <div class="r-export">
-      <h3>Gửi cho Claude để nhận xét</h3>
-      <div class="row">
-        <label class="r-title">Bài định đàn <input type="text" id="r-title" maxlength="60" placeholder="ví dụ: Happy Birthday"></label>
-        <button class="btn pri" id="r-copy">Sao chép để gửi Claude</button>
-        <button class="btn" id="r-dl">Tải tệp .txt</button>
-      </div>
-      <p class="muted" style="font-size:.86rem">Sao chép rồi dán (Ctrl+V) vào ô chat với Claude. Nội dung gồm lời nhờ nhận xét, bản nhạc viết bằng chữ (dạng ABC) và bảng từng lần bấm phím: đàn sớm hay trễ bao nhiêu so với nhịp, giữ phím bao lâu. Ghi tên bài để Claude so với bản gốc.</p>
-      <details class="r-pre"><summary>Xem nội dung sẽ gửi</summary><pre id="r-text"></pre></details>
-    </div>
-    <p class="muted" style="font-size:.86rem">Trang chỉ đoán được tốc độ em đàn. Nếu nốt trên khuông trông dài hay ngắn gấp đôi so với lúc em đàn, bấm <b>Viết nốt dài hơn</b> hoặc <b>Viết nốt ngắn hơn</b>: tên nốt và giai điệu vẫn giữ nguyên.</p>
+    <p class="muted r-hint">Sao chép rồi dán (Ctrl+V) vào ô chat với Claude: Claude so với bài gốc, chỉ chỗ sai nốt, sai nhịp và cách tập. Nếu nốt trông dài hay ngắn gấp đôi lúc đàn, bấm <b>Nốt dài hơn</b> hoặc <b>Nốt ngắn hơn</b>.</p>
+    <details class="r-pre"><summary>Xem nội dung sẽ gửi</summary><pre id="r-text"></pre></details>
   </div>
   <div class="card">
     <h3>Các bản đã lưu</h3>
     <div id="r-list"></div>
-    <p class="muted" style="font-size:.86rem">Bản lưu nằm trên trình duyệt của máy này.</p>
-  </div>
-  <div class="card">
-    <h3>Gợi ý cho phụ huynh</h3>
-    <ul class="list">
-      <li>Cho em đàn lại một câu vừa học rồi cùng xem bản nhạc: nốt nào trang viết khác bài mẫu là chỗ em đàn sai nốt hoặc sai độ dài.</li>
-      <li>Chọn <b>Theo máy đếm nhịp</b> khi em đã quen giữ nhịp: trang gõ một ô nhịp đếm vào rồi em mới đàn, độ dài nốt ghi chính xác hơn.</li>
-      <li>Em tự sáng tác vài nốt? Bấm <b>Lưu bản này</b> để giữ lại bài của em.</li>
-    </ul>
+    <details class="r-note"><summary>Gợi ý cho phụ huynh</summary>
+      <ul class="list">
+        <li>Cho em đàn lại một câu vừa học rồi cùng xem bản nhạc: nốt nào trang viết khác bài mẫu là chỗ em đàn sai nốt hoặc sai độ dài.</li>
+        <li>Chọn <b>Theo máy đếm nhịp</b> khi em đã quen giữ nhịp: trang gõ một ô nhịp đếm vào rồi em mới đàn, độ dài nốt ghi chính xác hơn.</li>
+        <li>Bản lưu nằm trên trình duyệt của máy này.</li>
+      </ul>
+    </details>
   </div>
 </section>
 
@@ -2496,24 +2506,29 @@ const midiName=m=>{ const pc=m%12; return 'CCDDEFFGGAAB'[pc]+([1,3,6,8,10].inclu
 function recNote(m){ const t=MIC.emitT||ac.currentTime; REC.ev.push({m,t,src:MIC.emitT?'mic':'ao'}); recLive(); }
 function recOff(m){ if(REC.on) REC.offs.push({m,t:ac.currentTime}); }
 function recLive(){
-  $('#r-live').innerHTML=REC.ev.slice(-16).map(e=>`<span class="chip">${esc(nm(e.m,'sol'))}</span>`).join('');
-  if(REC.on) $('#r-status').textContent=REC.ev.length?`Đã nghe ${REC.ev.length} nốt. Đàn xong thì bấm Dừng.`:(REC.mode==='nhip'?'':'Em đàn đi, trang đang nghe…');
+  const L=$('#r-live'); L.innerHTML=REC.ev.slice(-16).map(e=>`<span class="chip">${esc(nm(e.m,'sol'))}</span>`).join(''); L.hidden=!REC.on||!REC.ev.length;
+  if(REC.on&&!(REC.mode==='nhip'&&!REC.ev.length)){ const s=Math.max(0,Math.floor(performance.now()/1000-REC.startAt)); $('#r-status').textContent=`Đang ghi ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} · ${REC.ev.length} nốt`+(REC.ev.length?'':' · em đàn đi'); }
 }
 function recClicks(){ const beat=60/REC.bpm; while(REC.nextClick<ac.currentTime+0.15){ click(REC.nextClick,REC.beatI%REC.meter===0); REC.nextClick+=beat; REC.beatI++; }
   if(REC.on&&REC.mode==='nhip'&&!REC.ev.length){ const k=Math.floor((ac.currentTime-(REC.t0-REC.meter*beat))/beat)+1; $('#r-status').textContent=k<=REC.meter?`Đếm vào: ${k}…`:'Đàn đi!'; } }
 function recStart(){
   audio(); recPlayStop(); Object.assign(REC,{ev:[],offs:[],quiet:[],qs:0,res:null,scale:1,on:true});
+  if(REC.autoHid){ REC.autoHid=false; if($('#dock').classList.contains('hide')) $('#kb-hide').click(); }
   const beat=60/REC.bpm, now=ac.currentTime+0.1;
   if(REC.mode==='nhip'){ REC.t0=now+REC.meter*beat; REC.nextClick=now; REC.beatI=0; recClicks(); REC.clk=setInterval(recClicks,40); }
+  REC.startAt=performance.now()/1000; REC.tick=setInterval(recLive,500);
   $('#r-out').hidden=true; recLive(); recUi();
   if(!MIC.on) toast('Đang ghi từ đàn ảo. Muốn ghi đàn thật thì bấm Nghe đàn thật.');
 }
 function recStop(){
-  if(!REC.on) return; REC.on=false; clearInterval(REC.clk); REC.clk=0;
+  if(!REC.on) return; REC.on=false; clearInterval(REC.clk); REC.clk=0; clearInterval(REC.tick); $('#r-live').hidden=true;
   if(REC.qs){ REC.quiet.push([REC.qs,ac.currentTime]); REC.qs=0; }
   REC.res=recTranscribe(); recUi(); recRender();
+  // màn hình thấp (điện thoại xoay ngang): đàn ảo che gần hết bản nhạc, nên tạm thu gọn; ghi lần sau thì mở lại
+  if(REC.res&&innerHeight<560&&!$('#dock').classList.contains('hide')){ $('#kb-hide').click(); REC.autoHid=true; toast('Đã thu gọn đàn ảo để xem bản nhạc. Bấm Hiện đàn để mở lại.'); }
+  if(REC.res) setTimeout(()=>$('#r-out').scrollIntoView({block:'start'}),60); // bản nhạc thường nằm khuất dưới cây đàn ảo
 }
-function recUi(){ $('#r-go').textContent=REC.on?'Dừng ghi':'Bắt đầu ghi'; $('#r-go').classList.toggle('pri',!REC.on);
+function recUi(){ const b=$('#r-go'); b.textContent=REC.on?'■ Dừng ghi':(REC.res?'● Ghi lại':'● Bắt đầu ghi'); b.classList.toggle('on',REC.on);
   if(!REC.on) $('#r-status').textContent=REC.res?'Xong. Bản nhạc ở ngay bên dưới.':(REC.ev.length?'':'Bấm Bắt đầu ghi rồi đàn.'); }
 // khoảng cách hay gặp nhất giữa hai nốt liền nhau coi là một phách (nốt đen), tinh chỉnh ±15% cho khớp mọi khoảng cách
 function recGuessBeat(ts){
