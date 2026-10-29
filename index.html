@@ -338,6 +338,9 @@ details.step.cur .snum{border-color:var(--felt);color:var(--felt)}
 .qend{font-size:.8rem;color:var(--muted)}
 .stage-bar{display:flex;flex-direction:column;gap:6px;padding-block:2px 8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
 .stage-bar select{flex:1 1 240px;min-width:0;max-width:520px;font-weight:600;text-overflow:ellipsis}
+.fl-pick{display:flex;align-items:center;gap:6px;flex:1 1 340px;min-width:0;max-width:680px}
+.fl-pick .btn{flex:none;white-space:nowrap}
+@media (max-width:600px){.fl-pick{flex-basis:100%;gap:4px}.fl-pick .wd{display:none}}
 .dock.stage{max-height:100vh;max-height:100dvh;overflow-y:auto}
 @media (max-height:520px){.dock.stage .kb{height:90px}.stage-bar{gap:4px;padding-bottom:4px;margin-bottom:4px}.stage-bar .ctrls{gap:4px 6px}.stage-bar select{padding:4px 8px}.stage-bar .seg button{padding:4px 8px}.stage-bar .btn{padding:4px 9px}.fl-status{font-size:.82rem}}
 .fl-status{font-size:.92rem;font-weight:600;min-height:1.35em}
@@ -868,7 +871,11 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
     </div>
     <div class="stage-bar" id="stage-bar" hidden>
       <div class="ctrls">
-        <select id="fl-song" aria-label="Chọn bài"></select>
+        <span class="fl-pick">
+          <button class="btn sm" id="fl-prev" title="Bài trước (phím mũi tên trái ←)" aria-keyshortcuts="ArrowLeft PageUp">←<span class="wd"> Bài trước</span></button>
+          <select id="fl-song" aria-label="Chọn bài"></select>
+          <button class="btn sm" id="fl-next" title="Bài sau (phím mũi tên phải →)" aria-keyshortcuts="ArrowRight PageDown"><span class="wd">Bài sau </span>→</button>
+        </span>
         <div class="seg" id="fl-mode" role="group" aria-label="Chế độ">
           <button data-v="cho" aria-pressed="true">Chờ em</button>
           <button data-v="theo" aria-pressed="false">Theo nhịp</button>
@@ -2315,12 +2322,14 @@ function openFall(ex){
   stopAll(); F.ex=ex; F.on=true;
   const d=$('#dock'); d.classList.add('stage'); d.classList.remove('hide'); $('#kb-hide').textContent='Thu gọn';
   $('#stage-bar').hidden=false; $('#fall').hidden=false;
-  $('#fl-song').value=String(FALL_EX.findIndex(x=>x.ex===ex));
+  const fi=FALL_EX.findIndex(x=>x.ex===ex); $('#fl-song').value=String(fi);
+  $('#fl-prev').disabled=fi<=0; $('#fl-next').disabled=fi<0||fi>=FALL_EX.length-1;
   F.bpm=Math.max(30,Math.round(ex.bpm*0.8)); $('#fl-bpm').value=F.bpm; $('#fl-bpm-v').textContent=F.bpm;
   F.filter='all'; setSeg('#fl-hand','all'); $('#fl-hand').hidden=ex.hands.length<2;
   fallColors(); fallReset(); handbarSync(); requestAnimationFrame(sizeFall);
   if(!F.raf){ F.last=0; F.raf=requestAnimationFrame(fallLoop); }
 }
+function fallStep(d){ const i=FALL_EX.findIndex(x=>x.ex===F.ex)+d; if(i<0||i>=FALL_EX.length) return; openFall(FALL_EX[i].ex); }
 function closeFall(){ if(!F.on) return; F.on=false; F.run=false; HP.R=HP.L=null; GHOST.R=GHOST.L=null; setHints(new Set()); $('#stage-bar').hidden=true; $('#fall').hidden=true; $('#dock').classList.remove('stage'); handbarSync(); fitDock(); }
 function fallUi(){
   $('#fl-go').textContent=F.run?'Tạm dừng':F.done?'Chơi lại từ đầu':F.now>-F.ci+0.001?'Tiếp tục':'Bắt đầu';
@@ -2429,6 +2438,15 @@ function fallDraw(){
 function bindFall(){
   const sel=$('#fl-song'); FALL_EX.forEach((x,i)=>{ const o=document.createElement('option'); o.value=String(i); o.textContent=x.label; sel.appendChild(o); });
   sel.addEventListener('change',()=>openFall(FALL_EX[+sel.value].ex));
+  $('#fl-prev').addEventListener('click',()=>fallStep(-1));
+  $('#fl-next').addEventListener('click',()=>fallStep(1));
+  // phím tắt chuyển bài: ← → (hoặc PageUp / PageDown); bỏ qua khi đang gõ chữ hay kéo thanh nhịp
+  window.addEventListener('keydown',e=>{
+    if(!F.on||e.ctrlKey||e.metaKey||e.altKey) return;
+    const d={ArrowLeft:-1,PageUp:-1,ArrowRight:1,PageDown:1}[e.key]; if(!d) return;
+    const a=document.activeElement; if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT')) return;
+    e.preventDefault(); if(!e.repeat) fallStep(d);
+  });
   segBind('#fl-mode',v=>{ F.mode=v; fallReset(); });
   segBind('#fl-hand',v=>{ F.filter=v; fallReset(); });
   $('#fl-bpm').addEventListener('input',e=>{ F.bpm=+e.target.value; $('#fl-bpm-v').textContent=F.bpm; });
