@@ -254,9 +254,19 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .dock-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.85rem;margin-bottom:6px}
 .dock-bar .lbl{font-weight:600}
 .dock-bar .keys-hint{color:var(--muted);font-size:.78rem}
-@media (max-width:700px){.dock-bar .keys-hint{display:none}}
+@media (max-width:700px){.dock-bar .keys-hint{display:none}.dock-midi[aria-pressed="false"]{display:none}}
 .dock-bar .sp{flex:1}
-.mic-btn[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--card)}
+.mic-btn[aria-pressed="true"],.midi-btn[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--card)}
+.r-h{margin:14px 0 6px;font-size:.98rem}
+.cal-pop{position:fixed;right:12px;z-index:35;width:min(370px,calc(100vw - 24px));overflow:auto;margin:0;box-shadow:0 8px 28px rgba(0,0,0,.2)}
+.cal-pop h3{margin:0}
+.cal-pick{display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:600}
+.cal-pick select{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.cal-st{font-size:1rem;min-height:2.6em;margin:8px 0}
+.cal-list{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.85rem}
+.cal-list .chip{cursor:pointer;border:0}
+.r-file{gap:8px;margin-top:8px}
+.mic-btn[aria-pressed="false"]+.micmeter{display:none}
 .micmeter{display:inline-block;width:46px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;vertical-align:middle}
 .micmeter i{display:block;height:100%;width:0;background:var(--ok);transition:width .05s linear}
 .mic-last{font-size:.82rem}
@@ -403,7 +413,7 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
 
 <header class="top wrap">
   <div class="title-staff"><h1><span class="mus" aria-hidden="true">𝄞</span>Sổ tập Piano</h1></div>
-  <p class="sub">Lộ trình 12 tuần cho một em nhỏ 6–8 tuổi mới bắt đầu, có phụ huynh ngồi cạnh. Mỗi ngày 15–20 phút trên cây đàn Roland KR-570, đàn ảo bên dưới để nghe mẫu và tập theo.</p>
+  <p class="sub">Lộ trình 12 tuần cho một em nhỏ 6–8 tuổi mới bắt đầu, có phụ huynh ngồi cạnh. Mỗi ngày 15–20 phút trên cây đàn Yamaha Clavinova CLP-470, đàn ảo bên dưới để nghe mẫu và tập theo.</p>
 </header>
 
 <nav class="tabs" aria-label="Các phần">
@@ -417,7 +427,7 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
     <button class="tab" role="tab" data-tab="ghinhac" aria-selected="false">Ghi nhạc</button>
     <button class="tab" role="tab" data-tab="nhip" aria-selected="false">Máy đếm nhịp</button>
     <button class="tab" role="tab" data-tab="nhatky" aria-selected="false">Nhật ký</button>
-    <button class="tab" role="tab" data-tab="cayan" aria-selected="false">Đàn KR-570</button>
+    <button class="tab" role="tab" data-tab="cayan" aria-selected="false">Đàn CLP-470</button>
   </div>
 </nav>
 
@@ -594,12 +604,13 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
 <section class="pane" id="p-ghinhac" hidden>
   <div class="card">
     <h2>Ghi bản nhạc</h2>
-    <p class="muted">Em đàn, trang nghe rồi viết ra khuông nhạc. Đàn thật thì bật <b>Nghe đàn thật</b>; đàn ảo bên dưới cũng được.</p>
+    <p class="muted">Em đàn, trang viết ra khuông nhạc. Đàn thật thì nối dây USB hoặc bật <b>Nghe đàn thật</b>; đàn ảo bên dưới cũng được.</p>
     <div class="row r-top">
       <label class="r-title">Bài định đàn <input type="text" id="r-title" maxlength="60" placeholder="ví dụ: Happy Birthday (không bắt buộc)"></label>
     </div>
     <div class="row r-top">
       <button class="btn pri r-go" id="r-go">● Bắt đầu ghi</button>
+      <button class="btn midi-btn" aria-pressed="false">Nối đàn qua USB</button>
       <button class="btn mic-btn" aria-pressed="false">Nghe đàn thật</button>
       <span class="micmeter" aria-hidden="true"><i></i></span>
       <span class="status" id="r-status"></span>
@@ -617,8 +628,13 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       </div>
       <label class="tempo" id="r-bpm-box" hidden>Nhịp <input type="range" id="r-bpm" min="40" max="120" value="72"><span class="num" id="r-bpm-v">72</span></label>
     </div>
+    <div class="row r-file">
+      <button class="btn" id="r-file">Mở tệp .mid ghi từ đàn</button>
+      <input type="file" id="r-file-in" accept=".mid,.midi,.MID,audio/midi,audio/x-midi,audio/mid" hidden>
+      <span class="muted" style="font-size:.86rem">Tệp đàn CLP-470 ghi vào USB (thư mục USER FILES). Cách ghi: thẻ Đàn CLP-470.</span>
+    </div>
     <details class="r-note"><summary>Lưu ý khi ghi bằng micro</summary>
-      <p>Micro nghe rõ nhất khi em đàn <b>từng nốt một</b> (giai điệu một tay). Đàn hợp âm thì micro chỉ ghi được nốt vang to nhất; đàn ảo thì ghi đủ. Đè pedal thì trang không biết lúc em thả phím nên các nốt viết liền nhau. Trên trang claude.ai micro không chạy: mở bản web <b>so-tap-piano.vercel.app</b>.</p>
+      <p>Nối dây USB hoặc mở tệp .mid thì trang nhận đúng từng nốt, đủ hợp âm và lúc thả phím; micro chỉ là cách dự phòng. Micro nghe rõ nhất khi em đàn <b>từng nốt một</b> (giai điệu một tay). Đàn hợp âm thì micro chỉ ghi được nốt vang to nhất; đàn ảo thì ghi đủ. Đè pedal thì trang không biết lúc em thả phím nên các nốt viết liền nhau. Trên trang claude.ai micro không chạy: mở bản web <b>so-tap-piano.vercel.app</b>.</p>
     </details>
   </div>
   <div class="card r-out" id="r-out" hidden>
@@ -707,72 +723,93 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
   </div>
 </section>
 
-<!-- ĐÀN KR-570 -->
+<!-- ĐÀN CLP-470 -->
 <section class="pane" id="p-cayan" hidden>
-  <div class="box-warn"><b>Điện áp cần xác nhận trước khi cắm.</b> Nhãn sau đàn ghi <b>AC 100V, 62W</b>. Cửa hàng nói đã đổi nguồn để cắm thẳng 220V, nhưng điều này <b>cần xác nhận</b>. Thiết bị chỉ chịu 100V mà cắm vào 220V có thể hỏng ngay. Cho tới khi cửa hàng xác nhận (nên ghi vào phiếu bảo hành: đổi bằng cách nào, linh kiện gì), hãy cắm qua <b>biến áp đổi nguồn 220V → 100V</b> có công suất dư nhiều so với 62W.</div>
+  <div class="box-warn"><b>Trước khi cắm điện, xem nhãn ở mặt dưới đàn.</b> Sách hướng dẫn (trang 15) dặn: điện áp ghi trên nhãn phải đúng điện lưới nơi dùng; một số đàn có <b>công tắc chọn điện áp</b> ở mặt dưới, gần lỗ cắm AC IN, phải gạt đúng điện áp của vùng mình. Nếu nhãn chỉ ghi 100V thì không cắm thẳng vào ổ 220V. Chỉ dùng dây nguồn đi kèm đàn.</div>
 
   <div class="card">
     <h2>Cây đàn của em</h2>
     <div class="tblwrap"><table class="spec">
-      <tr><th>Mẫu</th><td>Roland KR-570(D), sản xuất năm 1997 tại Nhật</td></tr>
-      <tr><th>Loại</th><td>Piano điện dạng tủ, 88 phím hammer-action (phím nặng như đàn cơ)</td></tr>
-      <tr><th>Pedal</th><td>3 pedal: damper, soft, sostenuto</td></tr>
-      <tr><th>Tính năng khác</th><td>Nhịp điệu / style tự động, ổ đĩa mềm 3.5 inch, màn hình LCD</td></tr>
-      <tr><th>Kích thước (gồm chân)</th><td class="num">1437 × 525 × 890 mm</td></tr>
-      <tr><th>Khối lượng</th><td class="num">64,3 kg</td></tr>
-      <tr><th>Nguồn điện</th><td>Nhãn: AC 100V, 62W. Đã đổi sang 220V: <b>cần xác nhận</b></td></tr>
+      <tr><th>Mẫu</th><td>Yamaha Clavinova CLP-470, piano điện dạng tủ</td></tr>
+      <tr><th>Phím</th><td>88 phím NW (Natural Wood): phím trắng bằng gỗ thật, mặt phím giả ngà, nặng dần về phía phím trầm như đàn cơ</td></tr>
+      <tr><th>Pedal</th><td>3 pedal: damper bên phải (có nửa pedal), sostenuto ở giữa, soft bên trái</td></tr>
+      <tr><th>Máy đếm nhịp</th><td>Có sẵn trong đàn (nút METRONOME), tốc độ 5–500 phách/phút</td></tr>
+      <tr><th>Ghi bài</th><td>Ghi MIDI vào bộ nhớ đàn (10 bài) hoặc vào USB; ghi âm WAV vào USB, tối đa 80 phút một lần</td></tr>
+      <tr><th>Cổng cắm</th><td>2 cổng tai nghe PHONES; USB TO DEVICE (cắm USB); USB TO HOST (nối máy tính); MIDI IN, OUT, THRU; AUX IN, AUX OUT</td></tr>
+      <tr><th>Loa</th><td>Âm ly 40W × 2, loa (16 cm + 5 cm) × 2</td></tr>
+      <tr><th>Kích thước</th><td class="num">1420 × 513 × 907 mm (cao 1076 mm khi dựng giá nhạc)</td></tr>
+      <tr><th>Khối lượng</th><td class="num">74 kg (bản sơn bóng 80 kg)</td></tr>
     </table></div>
-    <p class="muted" style="font-size:.88rem">Thông tin lấy từ nhãn đàn và cửa hàng. Tên nút, cách gọi tiếng, cách tắt nhịp điệu trên bảng điều khiển: xem sách hướng dẫn chính thức của Roland tại <a href="https://www.roland.com/us/support/manual_archive/" target="_blank" rel="noopener">roland.com/us/support/manual_archive</a> (tìm mẫu KR-570), trang này không đoán tên nút.</p>
+    <p class="muted" style="font-size:.88rem">Thông tin lấy từ sách hướng dẫn chính thức của Yamaha (tiếng Anh): <a href="https://usa.yamaha.com/files/download/other_assets/0/321970/clp470_en_om_f0.pdf" target="_blank" rel="noopener">clp470_en_om_f0.pdf</a>. Tên nút trên trang này viết đúng như in trên đàn.</p>
   </div>
 
   <div class="grid2">
     <div class="card">
       <h3>Đặt đàn và an toàn</h3>
       <ul class="list">
-        <li>Đàn nặng 64,3 kg: cần ít nhất hai người khiêng, không kéo lê trên chân đàn.</li>
+        <li>Đàn nặng khoảng 74 kg: cần ít nhất hai người khiêng, không kéo lê trên chân đàn.</li>
         <li>Đặt trên nền phẳng, chắc; cách tường vài cm cho thoáng phía sau.</li>
         <li>Tránh nắng chiếu thẳng, chỗ ẩm, luồng gió điều hoà thổi vào.</li>
         <li>Dây điện đi sát tường, không vắt ngang lối em chạy nhảy.</li>
-        <li>Rút điện khi có giông sét hoặc đi vắng lâu ngày.</li>
+        <li>Tắt đàn rồi vẫn còn chút điện chạy vào đàn: rút phích khi có giông sét hoặc đi vắng lâu ngày.</li>
         <li>Không đặt cốc nước, chậu cây lên mặt đàn.</li>
       </ul>
     </div>
     <div class="card">
       <h3>Trước mỗi buổi tập</h3>
       <ul class="list">
-        <li>Vặn âm lượng nhỏ trước khi bật nguồn, bật xong mới tăng dần.</li>
-        <li>Chọn tiếng piano (tiếng mặc định khi mở máy trên đa số đàn điện; với KR-570 đối chiếu sách hướng dẫn).</li>
-        <li><b>Tắt nhịp điệu / style tự động</b> khi tập bài. Tiếng trống đệm dễ làm em đánh theo mà không đếm. Dùng thẻ Máy đếm nhịp thay thế.</li>
-        <li>Tập xong vặn nhỏ âm lượng rồi tắt nguồn.</li>
+        <li>Kéo thanh <b>MASTER VOLUME</b> (bên trái bảng nút) xuống nhỏ, bật công tắc nguồn ở bên phải bàn phím, rồi mới tăng dần.</li>
+        <li>Chọn tiếng <b>GRAND PIANO 1</b> cho các bài tập.</li>
+        <li>Cần đếm nhịp thì bấm nút <b>METRONOME</b> trên đàn; giữ METRONOME và bấm -/NO, +/YES để chọn số phách mỗi ô nhịp. Thẻ Máy đếm nhịp trên trang cũng dùng được.</li>
+        <li>Tập xong kéo nhỏ âm lượng rồi tắt nguồn. Đóng nắp phím mà chưa tắt thì đèn nguồn vẫn sáng: đàn vẫn đang bật.</li>
       </ul>
     </div>
     <div class="card">
       <h3>Ba pedal</h3>
       <ul class="list">
-        <li><b>Damper (pedal ngân):</b> giữ cho mọi nốt tiếp tục ngân sau khi nhả phím. Dùng nhiều nhất, học ở bài 20.</li>
-        <li><b>Sostenuto:</b> chỉ giữ ngân những nốt đang bấm đúng lúc đạp; nốt đánh sau đó vẫn tắt bình thường. Ít dùng khi mới học.</li>
-        <li><b>Soft:</b> làm tiếng nhỏ và dịu hơn.</li>
-        <li>Trên piano thông thường: damper bên phải, sostenuto ở giữa, soft bên trái. Kiểm lại trên đàn bằng cách thử từng pedal.</li>
+        <li><b>Damper (pedal ngân, bên phải):</b> giữ cho mọi nốt tiếp tục ngân sau khi nhả phím. Dùng nhiều nhất, học ở bài 20. Đàn có <b>nửa pedal</b>: đạp nửa chừng thì tiếng ngân ít hơn.</li>
+        <li><b>Sostenuto (ở giữa):</b> chỉ giữ ngân những nốt đang bấm đúng lúc đạp; nốt đánh sau đó vẫn tắt bình thường. Ít dùng khi mới học.</li>
+        <li><b>Soft (bên trái):</b> làm tiếng nhỏ và dịu hơn.</li>
         <li>Trẻ 6–8 tuổi thường chưa với tới pedal khi ngồi đúng tư thế. Cho em kê chân lên một bục thấp; chưa cần dùng pedal ở giai đoạn 1–2.</li>
       </ul>
     </div>
     <div class="card">
       <h3>Tai nghe</h3>
       <ul class="list">
-        <li>Cắm tai nghe để tập buổi tối, không làm phiền nhà bên.</li>
-        <li>Đa số đàn điện tắt loa khi cắm tai nghe; kiểm lại trên KR-570 khi thử đàn.</li>
+        <li>Đàn có <b>2 cổng PHONES</b> ở mặt dưới: cắm được hai tai nghe cùng lúc, phụ huynh nghe cùng em.</li>
+        <li>Cổng dùng phích stereo cỡ chuẩn (6,3 mm). Tai nghe điện thoại phích 3,5 mm cần thêm đầu chuyển.</li>
+        <li>Công tắc <b>SPEAKER</b>: NORMAL thì cắm tai nghe là loa tắt; ON loa luôn kêu; OFF loa luôn tắt.</li>
         <li>Với trẻ em: để âm lượng vừa phải, phụ huynh nghe thử trước; sau khoảng 30 phút cho tai nghỉ.</li>
-        <li>Đầu cắm tai nghe kiểu cũ có thể cần đầu chuyển (6.35 mm sang 3.5 mm): <b>cần xác nhận</b> khi xem cổng trên đàn.</li>
       </ul>
     </div>
   </div>
 
   <div class="card" id="mic-card">
     <h3>Cho trang nghe tiếng đàn thật</h3>
-    <p>Đặt máy tính hoặc iPad cạnh đàn, bật <b>Nghe đàn thật</b>. Khi bé đàn trên KR-570, trang nghe qua micro và tự biết bé bấm đúng hay sai: dùng được ở <b>Nốt rơi</b> (chế độ Chờ em và Theo nhịp), <b>Tập theo</b>, <b>Đọc nốt</b> và sổ dò nốt ở bài 10.</p>
-    <div class="row"><button class="btn pri mic-btn" aria-pressed="false">Nghe đàn thật</button><span class="micmeter" aria-hidden="true" style="width:120px"><i></i></span><span class="mic-last muted"></span></div>
+    <p>Trang biết bé bấm đúng hay sai ở <b>Nốt rơi</b> (chế độ Chờ em và Theo nhịp), <b>Tập theo</b>, <b>Đọc nốt</b>, sổ dò nốt ở bài 10 và thẻ <b>Ghi nhạc</b>. Có ba cách nối, cách trên chính xác nhất.</p>
+    <h4 class="r-h">1. Dây USB (chính xác từng nốt, kể cả hợp âm)</h4>
+    <div class="row"><button class="btn pri midi-btn" aria-pressed="false">Nối đàn qua USB</button><span class="midi-msg muted" style="font-size:.9rem"></span></div>
+    <ul class="list" style="font-size:.93rem">
+      <li>Cắm dây USB từ cổng <b>USB TO HOST</b> của đàn vào máy tính (dây đầu vuông sang đầu dẹt, loại thường dùng cho máy in). Máy tính tự cài trình điều khiển (sách trang 48).</li>
+      <li>Mở trang <a href="https://so-tap-piano.vercel.app/" target="_blank" rel="noopener">so-tap-piano.vercel.app</a> bằng <b>Chrome hoặc Edge</b>, bấm Nối đàn qua USB, chọn Cho phép khi trình duyệt hỏi.</li>
+      <li>iPad, Safari và trang trên claude.ai chưa nối được qua dây: dùng cách 2 hoặc 3.</li>
+      <li>Khi cắm USB TO HOST, hai cổng MIDI IN, OUT của đàn tạm không dùng.</li>
+    </ul>
+    <h4 class="r-h">2. Ghi trên đàn vào USB rồi mở tệp (chạy cả trên iPad)</h4>
+    <ol class="list" style="font-size:.93rem">
+      <li>Cắm USB vào cổng <b>USB TO DEVICE</b>. Bấm <b>SONG SELECT</b> tới khi đèn <b>USB MIDI</b> sáng, chọn số bài bằng -/NO, +/YES.</li>
+      <li>Bấm <b>REC</b>, rồi đàn: đàn bắt đầu ghi từ nốt đầu tiên. Xong bấm <b>STOP</b>. Chờ màn hình hiện End rồi mới rút USB (sách trang 34–36).</li>
+      <li>Cắm USB vào máy (iPad dùng đầu chuyển), vào thẻ <b>Ghi nhạc</b>, bấm <b>Mở tệp .mid</b>, chọn tệp đuôi .MID trong thư mục USER FILES.</li>
+      <li>Muốn trang viết đúng độ dài nốt: bật METRONOME trên đàn lúc ghi và đàn theo tiếng gõ.</li>
+    </ol>
+    <h4 class="r-h">3. Micro (không cần dây)</h4>
+    <p style="font-size:.93rem">Đặt máy tính hoặc iPad cạnh đàn, bật <b>Nghe đàn thật</b>. Micro nghe tốt nốt đơn, hợp âm dễ thiếu nốt.</p>
+    <div class="row"><button class="btn mic-btn" aria-pressed="false">Nghe đàn thật</button><span class="micmeter" aria-hidden="true" style="width:120px"><i></i></span><span class="mic-last muted"></span></div>
     <label class="tempo">Độ nhạy <input type="range" id="mic-sens" min="1" max="10" value="6" aria-label="Độ nhạy micro"><span class="num" id="mic-sens-v">6</span></label>
     <p class="mic-msg muted" style="font-size:.9rem"></p>
+    <p style="font-size:.93rem"><b>Micro nghe sai một nốt?</b> Bấm <b>Khớp nốt</b>, chọn nốt đúng rồi gõ lại nốt đó trên đàn thật: lần nào trang còn nghe sai thì nó ghi nhớ tiếng ấy là nốt đúng, tới khi nhận đúng ba lần liền. Nút Khớp nốt cũng có trên thanh đàn ảo khi micro đang bật.</p>
+    <div class="row"><button class="btn cal-btn">Khớp nốt</button></div>
+    <details class="r-note"><summary>Cách đặt micro cho nghe tốt</summary>
     <ul class="list" style="font-size:.93rem">
       <li><b>Mở ở đâu:</b> trang trên claude.ai không được phép dùng micro. Trên iPad và máy tính, mở bản web riêng: <a href="https://so-tap-piano.vercel.app/" target="_blank" rel="noopener">so-tap-piano.vercel.app</a> (bản dự phòng: <a href="https://pvviet002.github.io/so-tap-piano/" target="_blank" rel="noopener">pvviet002.github.io/so-tap-piano</a>). Lần đầu bấm Nghe đàn thật, trình duyệt sẽ hỏi quyền dùng micro: chọn Cho phép.</li>
       <li>Bản web riêng lưu nhật ký trong trình duyệt của từng máy, không chung với bản trên claude.ai.</li>
@@ -782,18 +819,19 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       <li>Trang tự bỏ qua tiếng nó phát ra (máy chơi tay kia, tiếng gõ nhịp). Nếu vẫn bị nhầm, tắt "gõ nhịp".</li>
       <li>Nhận tốt nhất với nốt đơn và hợp âm ba nốt; đàn quá nhanh hoặc dùng pedal ngân nhiều sẽ dễ nhầm hơn.</li>
     </ul>
+    </details>
   </div>
 
   <div class="card">
     <div class="row" style="justify-content:space-between"><h3>Kiểm tra đàn cũ mới mang về</h3><span class="chip" id="c-sum">0 / 0</span></div>
-    <p class="muted" style="font-size:.9rem">Làm lần lượt, ghi kết quả ngay. Kết quả được lưu lại để gửi cho cửa hàng nếu cần. Bước 1 chỉ làm sau khi đã chắc chắn về điện áp.</p>
+    <p class="muted" style="font-size:.9rem">Làm lần lượt, ghi kết quả ngay. Kết quả được lưu lại để gửi cho cửa hàng nếu cần. Bước 1 chỉ làm sau khi đã xem nhãn điện áp.</p>
     <ul class="checks" id="checks"></ul>
   </div>
   <div class="card">
     <h3>Quay video báo lỗi cho cửa hàng</h3>
     <ol class="list">
       <li>Quay ngang, đủ sáng, giữ máy chắc tay. Mỗi lỗi một đoạn ngắn 20–40 giây.</li>
-      <li>Đầu đoạn quay nhãn sau đàn (mẫu, số máy) một lần, để cửa hàng biết đúng cây đàn.</li>
+      <li>Đầu đoạn quay nhãn ở mặt dưới đàn (mẫu, số máy) một lần, để cửa hàng biết đúng cây đàn.</li>
       <li>Nói to lỗi gì và ở đâu, ví dụ "phím Rê thứ ba từ trái sang không kêu", rồi bấm phím đó vài lần, bấm cả phím bên cạnh để so sánh.</li>
       <li>Lỗi về tiếng (rè, lạch cạch): để điện thoại gần chỗ phát ra tiếng, tắt quạt và điều hoà.</li>
       <li>Lỗi khi đã chạy lâu (nóng, mùi lạ): ghi thời điểm bật máy và lúc phát hiện.</li>
@@ -802,6 +840,14 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
   </div>
 </section>
 </main>
+
+<div class="card cal-pop" id="cal" role="dialog" aria-label="Khớp nốt cho micro" hidden>
+  <div class="row" style="justify-content:space-between"><h3>Khớp nốt cho micro</h3><button class="btn sm" id="cal-x">Đóng</button></div>
+  <label class="cal-pick">Nốt đúng là <select id="cal-note"></select></label>
+  <p class="muted" style="font-size:.85rem;margin:4px 0 0">Hoặc bấm phím đó trên đàn ảo. Sau đó gõ nốt ấy trên đàn thật.</p>
+  <p class="cal-st" id="cal-st" aria-live="polite"></p>
+  <div class="cal-list" id="cal-list"></div>
+</div>
 
 <div class="dock" id="dock">
   <div class="dock-in">
@@ -813,7 +859,9 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
         <button data-v="an" aria-pressed="false">Ẩn tên</button>
       </div>
       <button class="btn sm pedal" id="kb-pedal" aria-pressed="false">Pedal ngân</button>
+      <button class="btn sm midi-btn dock-midi" aria-pressed="false">Nối đàn qua USB</button>
       <button class="btn sm mic-btn" aria-pressed="false">Nghe đàn thật</button><span class="micmeter" aria-hidden="true"><i></i></span><span class="mic-last muted"></span>
+      <button class="btn sm cal-btn dock-cal" hidden title="Micro nghe sai nốt: chỉ cho trang nốt đúng">Khớp nốt</button>
       <span class="keys-hint">Bàn phím máy tính: A S D F G H J K = Đô giữa → Đô · Z X C V B N M = quãng dưới · phím cách = pedal</span>
       <span class="sp"></span>
       <button class="btn sm" id="kb-hide">Thu gọn</button>
@@ -926,7 +974,7 @@ function click(t,acc){
 function chime(){const a=audio(),t=a.currentTime+0.02;scheduleNote(79,t,0.5);scheduleNote(84,t+0.18,0.9)}
 
 /* ---------- Đàn ảo ---------- */
-const LO=21, HI=108; // đủ 88 phím như KR-570: La0 → Đô8
+const LO=21, HI=108; // đủ 88 phím như CLP-470: La0 → Đô8
 const MIC_LO=40, MIC_HI=79; // micro chỉ dò nốt trong quãng các bài tập (Mi2 → Sol5), đã thử với âm tổng hợp
 const keyEls=new Map(); const whites=[];
 for(let m=LO;m<=HI;m++) if(WHITE.has(m%12)) whites.push(m);
@@ -1825,19 +1873,21 @@ function renderLog(){
 function renderAll(){ renderToday(); renderRoadmapStatus(); renderSongStatus(); renderLog(); renderTheoryStatus(); }
 
 /* ---------- Kiểm tra đàn ---------- */
-const CHECKS=[
-  ['nguon','Bật nguồn, để chạy 15–20 phút','Chỉ làm sau khi chắc chắn về điện áp. Không có mùi khét, thân đàn và chỗ cắm điện không nóng bất thường.'],
-  ['phim','Bấm đủ 88 phím, không phím câm, không phím kẹt','Chia đàn thành từng quãng tám theo các phím Đô, bấm lần lượt cả phím trắng lẫn phím đen.'],
-  ['lachcach','Không có tiếng lạch cạch khi bấm và nhả phím','Bấm nhanh, nhả nhanh vài lần ở mỗi quãng tám; nghe tiếng cơ, không chỉ tiếng loa.'],
-  ['luc','Lực phím đều: bấm nhẹ thì nhỏ, bấm mạnh thì to','Thử cùng một phím nhẹ rồi mạnh; so lực bấm giữa các phím cạnh nhau.'],
-  ['loa','Loa trái và loa phải đều kêu, không rè','Đánh vùng phím trầm rồi vùng phím cao; áp tai gần từng bên loa.'],
-  ['tainghe','Cổng tai nghe: nghe rõ hai bên, không rè khi lắc nhẹ dây','Cắm tai nghe, chơi vài nốt, lắc nhẹ phích cắm.'],
-  ['damper','Pedal damper (ngân)','Đạp, bấm một hợp âm rồi nhả tay: tiếng phải còn ngân. Nhả pedal: tiếng tắt.'],
-  ['sostenuto','Pedal sostenuto','Bấm giữ một nốt, đạp pedal, nhả tay: nốt đó còn ngân; các nốt bấm sau đó tắt bình thường.'],
-  ['soft','Pedal soft','Đạp và bấm một nốt: tiếng nhỏ, dịu hơn khi không đạp.'],
-  ['style','Thử vài nhịp điệu / style','Bật, nghe vài giây, tắt được. Cách gọi style: xem sách hướng dẫn KR-570.'],
-  ['lcd','Màn hình LCD hiển thị đủ, không mất nét','Quan sát khi bật và khi đổi chức năng.'],
-  ['amluong','Núm hoặc nút âm lượng không rè khi chỉnh','Vặn từ nhỏ đến to trong lúc đang có tiếng đàn.'],
+const CHECKS=[ // khoá 'y-…': kết quả kiểm cây CLP-470, không lẫn với cây KR-570 cũ
+  ['y-nguon','Bật nguồn, để chạy 15–20 phút','Chỉ làm sau khi đã xem nhãn điện áp. Không có mùi khét, thân đàn và chỗ cắm điện không nóng bất thường.'],
+  ['y-phim','Bấm đủ 88 phím, không phím câm, không phím kẹt','Chia đàn thành từng quãng tám theo các phím Đô, bấm lần lượt cả phím trắng lẫn phím đen.'],
+  ['y-lachcach','Không có tiếng lạch cạch khi bấm và nhả phím','Bấm nhanh, nhả nhanh vài lần ở mỗi quãng tám; nghe tiếng cơ, không chỉ tiếng loa.'],
+  ['y-luc','Lực phím đều: bấm nhẹ thì nhỏ, bấm mạnh thì to','Thử cùng một phím nhẹ rồi mạnh; so lực bấm giữa các phím cạnh nhau.'],
+  ['y-loa','Loa trái và loa phải đều kêu, không rè','Đánh vùng phím trầm rồi vùng phím cao; áp tai gần từng bên loa.'],
+  ['y-tainghe','Hai cổng PHONES: nghe rõ hai bên, không rè khi lắc nhẹ dây','Cắm tai nghe lần lượt vào từng cổng, chơi vài nốt, lắc nhẹ phích cắm.'],
+  ['y-damper','Pedal damper (ngân, bên phải)','Đạp, bấm một hợp âm rồi nhả tay: tiếng phải còn ngân. Nhả pedal: tiếng tắt. Đạp nửa chừng: ngân ít hơn.'],
+  ['y-sostenuto','Pedal sostenuto (ở giữa)','Bấm giữ một nốt, đạp pedal, nhả tay: nốt đó còn ngân; các nốt bấm sau đó tắt bình thường.'],
+  ['y-soft','Pedal soft (bên trái)','Đạp và bấm một nốt: tiếng nhỏ, dịu hơn khi không đạp.'],
+  ['y-metro','Nút METRONOME gõ nhịp, đổi được tốc độ','Bấm METRONOME nghe tiếng gõ; bấm TEMPO/FUNCTION rồi đổi tốc độ.'],
+  ['y-ghi','Ghi thử vào USB rồi mở trên trang','Theo cách 2 ở trên: ghi vài câu vào USB, mở tệp ở thẻ Ghi nhạc, xem đúng nốt.'],
+  ['y-usb','Dây USB TO HOST: trang nhận nốt','Nối máy tính, mở trang bằng Chrome hoặc Edge, bấm Nối đàn qua USB, đàn vài nốt.'],
+  ['y-manhinh','Màn hình số hiển thị đủ nét','Quan sát khi bật đàn và khi đổi tốc độ.'],
+  ['y-amluong','Thanh MASTER VOLUME không rè khi kéo','Kéo từ nhỏ đến to trong lúc đang có tiếng đàn.'],
 ];
 function buildChecks(){
   const ul=$('#checks');
@@ -2161,7 +2211,7 @@ const TH=[
   hinh:()=>staffSVG({clef:'G',time:[4,4],items:[{n:'C4',d:'den',dyn:'p'},{n:'D4',d:'den'},{n:'E4',d:'den'},{n:'F4',d:'den'},{bar:1},{n:'G4',d:'den',stac:true,dyn:'f'},{n:'G4',d:'den',stac:true},{n:'G4',d:'trang'},{bar:'end'}],labels:false,slurs:[[0,3]],alt:'Ký hiệu biểu cảm'}),
   tro:[{t:'dyn'}],
   quiz:[{q:'Chữ p trên bản nhạc nghĩa là chơi…',o:['nhỏ, nhẹ','to, mạnh'],a:0,w:'p là piano, tiếng Ý nghĩa là nhẹ.'},{q:'Chấm nhỏ trên hoặc dưới nốt nghĩa là…',o:['ngân thật dài','nảy, ngắn'],a:1},{q:'Đường cong nối nhiều nốt khác nhau nghĩa là…',o:['chơi liền mạch','chơi tách rời'],a:0}],
-  ph:'Đàn KR-570 có phím cảm lực: bấm nhẹ ra tiếng nhỏ, bấm mạnh ra tiếng to. Cho em thử chơi cùng một câu nhạc thật nhỏ rồi thật to.'},
+  ph:'Đàn CLP-470 có phím cảm lực: bấm nhẹ ra tiếng nhỏ, bấm mạnh ra tiếng to. Cho em thử chơi cùng một câu nhạc thật nhỏ rồi thật to.'},
  {n:13,ten:'Gam và hợp âm',sub:'Trưởng vui, thứ buồn',
   nho:['<b>Gam</b> là chuỗi nốt đi lần lượt từ một nốt lên nốt cùng tên cao hơn. Gam Đô trưởng gồm toàn phím trắng từ Đô tới Đô.','Gam trưởng đi theo bước: <b>cung – cung – nửa – cung – cung – cung – nửa</b>.','<b>Hợp âm</b> là ba nốt vang cùng lúc, lấy theo kiểu "bỏ một lấy một": Đô (bỏ Rê) Mi (bỏ Fa) Sol.','Hợp âm <b>trưởng</b> nghe vui, sáng; hợp âm <b>thứ</b> nghe buồn hơn.','Ký hiệu: <b>C</b> là Đô trưởng, <b>Am</b> là La thứ (chữ m nghĩa là thứ), <b>G7</b> là Sol bảy.','Số nhỏ ghi trên nốt trong bản nhạc là <b>số ngón tay</b> nên dùng.'],
   hinh:()=>staffSVG({clef:'G',items:[...['C4','D4','E4','F4','G4','A4','B4','C5'].map(n=>({n,lab:nm(midi(n),'sol'),w:34})),{gap:20},{ch:['C4','E4','G4'],lab:'C'},{ch:['A3','C4','E4'],lab:'Am'}],alt:'Gam Đô trưởng và hai hợp âm'}),
@@ -2452,15 +2502,19 @@ function micExpected(){
   return null;
 }
 function micEmit(m){ const k=keyEls.get(m); if(k){ k.classList.add('down'); setTimeout(()=>k.classList.remove('down'),260); } MIC.lag=0.08; MIC.emitT=MIC.lastOnset; try{ emit(m); } finally { MIC.lag=0; MIC.emitT=0; } micShow(m); }
-function micShow(m){ $$('.mic-last').forEach(e=>e.textContent=m>=0?`nghe được: ${nm(m,'sol')} (${nm(m,'abc')})`:''); }
+function micShow(m){ if(m>=0&&MIC.lastV&&!MIDIIN.cur) MIC.lastHeard=m; $$('.mic-last').forEach(e=>e.textContent=m>=0?`nghe được: ${nm(m,'sol')} (${nm(m,'abc')})`:''); }
 const MIC_LEN=6144, MIC_WAIT=100;
 function onsetSpectrum(pre,post){ const d=new Float32Array(post.length); for(let i=0;i<post.length;i++) d[i]=Math.max(0,post[i]-pre[i]*0.75); return d; }
 function micAnalyze(){
   MIC.pending=0; if(!MIC.on) return;
   MIC.an.getFloatTimeDomainData(MIC.buf);
   const S=salience(onsetSpectrum(MIC.pre,fftMag(MIC.buf,MIC_LEN)),ac.sampleRate), t=ac.currentTime;
-  const own=new Set(OUTS.filter(o=>o.a<=t+0.02&&o.b>=t-0.1).map(o=>o.m));
-  const r=micJudge(S,micExpected(),own,MIC.sens);
+  if(CAL.on){ calHeard(S); return; }
+  const own=new Set(OUTS.filter(o=>o.a<=t+0.02&&o.b>=t-0.1).map(o=>o.m)), exp=micExpected();
+  const r=micJudge(S,exp,own,MIC.sens);
+  if(r.top>=0){ // tiếng gõ giống mẫu đã khớp thì tin mẫu (hợp âm không giống mẫu một nốt nào nên vẫn dò như cũ)
+    MIC.lastV=micVec(S); MIC.lastT=t; MIC.lastHeard=-1; const pm=mauPick(MIC.lastV,r.top);
+    if(pm>=0&&!own.has(pm)){ if(!exp||exp.includes(pm)||exp.length===1){ micEmit(pm); return; } if(!exp.length) return; } }
   if(r.hit.length) r.hit.forEach(micEmit);
   else if(r.wrong>=0) micEmit(r.wrong);
   else if(r.top>=0&&!micExpected()) micEmit(r.top);
@@ -2489,12 +2543,87 @@ async function micStart(){
     micUi(); toast('Đã bật micro. Đàn một nốt thử xem.');
   }catch(err){ micFail(location.hostname.endsWith('claude.ai')||location.hostname.endsWith('claudeusercontent.com')?'Trang trên claude.ai không được dùng micro. Mở bản web riêng: so-tap-piano.vercel.app':'Chưa bật được micro: hãy cho phép trang dùng micro trong trình duyệt rồi thử lại.'); }
 }
-function micStop(){ MIC.on=false; clearInterval(MIC.timer); clearTimeout(MIC.pending); MIC.pending=0; if(MIC.stream) MIC.stream.getTracks().forEach(t=>t.stop()); MIC.stream=null; $$('.micmeter i').forEach(x=>x.style.width='0'); micShow(-1); micUi(); }
+function micStop(){ if(CAL.on) calClose(); MIC.on=false; clearInterval(MIC.timer); clearTimeout(MIC.pending); MIC.pending=0; if(MIC.stream) MIC.stream.getTracks().forEach(t=>t.stop()); MIC.stream=null; $$('.micmeter i').forEach(x=>x.style.width='0'); micShow(-1); micUi(); }
 function micFail(msg){ MIC.on=false; micUi(); $$('.mic-msg').forEach(e=>e.textContent=msg); toast(msg); }
-function micUi(){ $$('.mic-btn').forEach(b=>{ b.setAttribute('aria-pressed',MIC.on?'true':'false'); b.textContent=MIC.on?'Tắt micro':'Nghe đàn thật'; }); if(MIC.on) $$('.mic-msg').forEach(e=>e.textContent='Micro đang bật. Đàn trên đàn thật, trang sẽ nhận nốt.'); }
+function micUi(){ $$('.mic-btn').forEach(b=>{ b.setAttribute('aria-pressed',MIC.on?'true':'false'); b.textContent=MIC.on?'Tắt micro':'Nghe đàn thật'; }); $$('.dock-cal').forEach(b=>b.hidden=!MIC.on); if(MIC.on) $$('.mic-msg').forEach(e=>e.textContent='Micro đang bật. Đàn trên đàn thật, trang sẽ nhận nốt.'); }
 function bindMic(){
   document.addEventListener('click',e=>{ const b=e.target.closest('.mic-btn'); if(b){ if(MIC.on) micStop(); else micStart(); } });
   const s=$('#mic-sens'); if(s){ s.value=MIC.sens; $('#mic-sens-v').textContent=MIC.sens; s.addEventListener('input',()=>{ MIC.sens=+s.value; $('#mic-sens-v').textContent=MIC.sens; lsWrite('pianoMicNhay',MIC.sens); }); }
+}
+
+/* ---------- Khớp nốt: dạy micro nhận đúng những nốt nó hay nghe sai ----------
+   Mỗi tiếng gõ cho một dãy "độ nổi" của từng nốt Mi2 → Sol5; chuẩn hoá dãy đó thành một mẫu. Người dùng chọn nốt đúng rồi gõ lại
+   trên đàn thật: lần nào trang còn nghe sai thì ghi tiếng đó làm mẫu của nốt đúng, tới khi nhận đúng ba lần liền.
+   Rồi gõ cả nốt trang từng nhầm sang (thường cách một quãng tám, họa âm gần như trùng) để có mẫu của cả hai: thiếu bước này thì
+   mẫu Đô4 vừa học sẽ nuốt luôn tiếng Đô5 thật (đã thử bằng tiếng tổng hợp, 29/10/2026).
+   Lúc nghe bình thường, tiếng gõ giống một mẫu thì tin mẫu hơn bộ dò họa âm (mauPick). Số đo bằng tiếng tổng hợp: cùng một tiếng
+   gõ nhiều lần giống nhau ≥ 0.995; Đô4 thiếu âm cơ bản so với Đô5 thật chỉ 0.985. Vì vậy nốt bộ dò nghe ra mà chưa có mẫu
+   thì mẫu nốt khác phải giống ≥ MAU_CHAC mới được thay. */
+const MAU={d:lsRead('pianoMicMau',{})}, MAU_SIM=0.97, MAU_CHAC=0.993, MAU_MAX=10;
+function mauPick(v,raw){ const mt=mauMatch(v); if(mt.m<0||mt.sim<MAU_SIM||mt.gap<0.004) return -1;
+  if(mt.m!==raw&&!MAU.d[raw]&&mt.sim<MAU_CHAC) return -1; return mt.m; }
+const CAL={on:false,m:-1,ok:0,conf:-1,pair:-1}; // conf: nốt trang nhầm sang; pair: nốt đã khớp xong ở lượt trước
+function micVec(S){ const v=[]; let n=0; for(let m=MIC_LO;m<=MIC_HI;m++){ v.push(S[m]); n+=S[m]*S[m]; } n=Math.sqrt(n)||1; return v.map(x=>x/n); }
+function mauMatch(v){
+  let best={m:-1,sim:0,gap:0}, second=0;
+  Object.keys(MAU.d).forEach(k=>{ let s=0; MAU.d[k].forEach(u=>{ let d=0; for(let i=0;i<v.length;i++) d+=v[i]*(u[i]||0); if(d>s) s=d; });
+    if(s>best.sim){ second=best.sim; best={m:+k,sim:s}; } else if(s>second) second=s; });
+  best.gap=best.sim-second; return best;
+}
+function mauAdd(m,v){ const L=MAU.d[m]||(MAU.d[m]=[]); L.push(v.map(x=>Math.round(x*1000)/1000)); if(L.length>MAU_MAX) L.shift(); lsWrite('pianoMicMau',MAU.d); calList(); }
+const nmF=m=>`${nm(m,'sol')} (${nm(m,'abc')})`;
+function calList(){
+  const ks=Object.keys(MAU.d).map(Number).sort((a,b)=>a-b), L=$('#cal-list');
+  L.innerHTML=ks.length?'<span class="muted">Đã khớp:</span>'+ks.map(m=>`<button class="chip" data-del="${m}" title="Bỏ các mẫu của nốt này">${esc(nmF(m))} · ${MAU.d[m].length} mẫu ✕</button>`).join('')+'<button class="btn sm" data-del="all">Xoá hết</button>':'<span class="muted">Chưa khớp nốt nào: trang đang dò nốt theo họa âm.</span>';
+  $$('#cal-note option').forEach(o=>{ const m=+o.value; if(m>=0) o.textContent=nmF(m)+(MAU.d[m]?' · đã khớp':''); });
+}
+function calPos(){ const c=$('#cal'); if(c.hidden) return; const d=$('#dock').getBoundingClientRect(), top=d.top>0&&d.top<innerHeight?d.top:innerHeight;
+  c.style.bottom=(innerHeight-top+8)+'px'; c.style.maxHeight=Math.max(150,top-16)+'px'; }
+// mở từ nút trên thanh đàn ngay sau tiếng nghe sai: nốt trang vừa nghe ra là nốt nó nhầm sang (chỉ dùng để mời gõ phân biệt, không lấy làm mẫu)
+function calOpen(fromDock){
+  const recent=fromDock&&MIC.on&&MIC.lastHeard>=0&&ac&&ac.currentTime-MIC.lastT<15;
+  if(!MIC.on) micStart();
+  CAL.on=true; CAL.m=-1; CAL.ok=0; CAL.conf=recent?MIC.lastHeard:-1; CAL.pair=-1;
+  // màn hình thấp (điện thoại xoay ngang): đàn ảo chiếm gần hết chiều cao, tạm thu gọn để hộp hiện đủ; đóng hộp thì mở lại
+  if(innerHeight<560&&!$('#dock').classList.contains('hide')){ $('#kb-hide').click(); CAL.autoHid=true; }
+  $('#cal-note').value='-1'; $('#cal').hidden=false; calPos(); calList();
+  $('#cal-st').innerHTML=recent?`Tiếng vừa rồi trang nghe là <b>${esc(nmF(MIC.lastHeard))}</b>. Nốt đúng là gì? Chọn ở trên hoặc bấm phím đàn ảo, rồi gõ lại nốt đó trên đàn thật.`:'Chọn nốt trang hay nghe sai, rồi gõ nốt đó trên đàn thật.';
+}
+function calClose(){ CAL.on=false; $('#cal').hidden=true; if(CAL.autoHid){ CAL.autoHid=false; if($('#dock').classList.contains('hide')) $('#kb-hide').click(); } }
+function calPick(m){
+  if(m<MIC_LO||m>MIC_HI){ $('#cal-st').textContent='Micro chỉ dò nốt từ Mi2 tới Sol5, chọn nốt trong khoảng đó.'; return; }
+  if(m!==CAL.m) CAL.pair=-1; if(m===CAL.conf) CAL.conf=-1; CAL.m=m; CAL.ok=0; $('#cal-note').value=String(m);
+  $('#cal-st').innerHTML=`Gõ <b>${esc(nmF(m))}</b> trên đàn thật, từng lần một.`;
+}
+function calHeard(S){
+  const st=$('#cal-st'), r=micJudge(S,null,new Set(),MIC.sens), t=ac.currentTime;
+  if(OUTS.some(o=>o.a<=t&&o.a>=t-0.6)) return; // tiếng đàn ảo vừa bấm để chọn nốt, không phải đàn thật
+  if(CAL.m<0){ st.textContent='Chọn nốt đúng trước: chọn ở trên hoặc bấm phím đàn ảo.'; return; }
+  if(r.top<0){ st.textContent='Chưa nghe rõ. Gõ rõ hơn, để máy gần đàn hơn hoặc tăng độ nhạy.'; return; }
+  const v=micVec(S), pm=mauPick(v,r.top), heard=pm>=0?pm:r.top;
+  $$('.mic-last').forEach(e=>e.textContent=`nghe được: ${nmF(heard)}`);
+  const k=keyEls.get(heard); if(k){ k.classList.add(heard===CAL.m?'good':'bad'); setTimeout(()=>k.classList.remove('good','bad'),400); }
+  if(heard!==CAL.m||(MAU.d[CAL.m]||[]).length<2) mauAdd(CAL.m,v); // nốt nào cũng giữ ít nhất hai mẫu
+  if(r.top!==CAL.m&&CAL.conf<0&&CAL.pair<0) CAL.conf=r.top; // nốt bộ dò họa âm nhầm sang, kể cả khi mẫu đã sửa đúng
+  if(heard===CAL.m){ CAL.ok++;
+    if(CAL.ok<3){ st.innerHTML=`Trang nghe: <b>${esc(nmF(heard))}</b> ✓ đúng (${CAL.ok}/3). Gõ tiếp.`; return; }
+    if(CAL.conf>=MIC_LO&&CAL.conf<=MIC_HI&&CAL.pair<0){ const a=CAL.m, b=CAL.conf; CAL.pair=a; CAL.m=b; CAL.conf=-1; CAL.ok=0; $('#cal-note').value=String(b);
+      st.innerHTML=`Xong ${esc(nmF(a))}. Giờ gõ <b>${esc(nmF(b))}</b> vài lần (nốt trang từng nhầm sang) để trang phân biệt hai nốt.`; return; }
+    st.innerHTML=CAL.pair>=0?`<b>Xong.</b> Trang đã phân biệt được ${esc(nmF(CAL.pair))} và ${esc(nmF(CAL.m))}. Chọn nốt khác, hoặc Đóng.`:`<b>Xong.</b> Trang đã nhận đúng ${esc(nmF(CAL.m))} ba lần liền. Chọn nốt khác, hoặc Đóng.`; }
+  else { CAL.ok=0; st.innerHTML=`Trang nghe: <b>${esc(nmF(heard))}</b> ✗ chưa đúng. Đã nhớ tiếng này là ${esc(nm(CAL.m,'sol'))}, gõ lại.`; }
+}
+function bindCal(){
+  const sel=$('#cal-note'); sel.innerHTML='<option value="-1">chọn nốt…</option>'+Array.from({length:MIC_HI-MIC_LO+1},(_,i)=>`<option value="${MIC_LO+i}">${esc(nmF(MIC_LO+i))}</option>`).join('');
+  sel.addEventListener('change',()=>{ const m=+sel.value; if(m>=0) calPick(m); });
+  document.addEventListener('click',e=>{ const b=e.target.closest('.cal-btn'); if(b) calOpen(b.classList.contains('dock-cal')); });
+  $('#cal-x').addEventListener('click',calClose);
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&CAL.on) calClose(); });
+  $('#cal-list').addEventListener('click',e=>{ const b=e.target.closest('[data-del]'); if(!b) return;
+    if(b.dataset.del==='all'){ if(!confirm('Xoá mọi mẫu đã khớp? Trang sẽ dò nốt như ban đầu.')) return; MAU.d={}; }
+    else delete MAU.d[b.dataset.del];
+    lsWrite('pianoMicMau',MAU.d); calList(); });
+  window.addEventListener('resize',calPos);
+  calList();
 }
 
 /* ---------- Ghi bản nhạc: nghe em đàn rồi viết ra khuông ----------
@@ -2503,7 +2632,7 @@ function bindMic(){
    hay gặp nhất giữa hai nốt (coi là nốt đen) → làm tròn về ô móc đơn → chia ô nhịp → vẽ khuông. */
 const REC={on:false,mode:'tudo',bpm:72,meter:4,t0:0,ev:[],offs:[],quiet:[],qs:0,clk:0,nextClick:0,beatI:0,res:null,scale:1,lab:true,voices:[],playT:0};
 const midiName=m=>{ const pc=m%12; return 'CCDDEFFGGAAB'[pc]+([1,3,6,8,10].includes(pc)?'#':'')+(Math.floor(m/12)-1); };
-function recNote(m){ const t=MIC.emitT||ac.currentTime; REC.ev.push({m,t,src:MIC.emitT?'mic':'ao'}); recLive(); }
+function recNote(m){ const t=MIDIIN.cur?MIDIIN.t:(MIC.emitT||ac.currentTime); REC.ev.push({m,t,src:MIDIIN.cur?'midi':MIC.emitT?'mic':'ao',v:MIDIIN.cur?MIDIIN.v:0}); recLive(); }
 function recOff(m){ if(REC.on) REC.offs.push({m,t:ac.currentTime}); }
 function recLive(){
   const L=$('#r-live'); L.innerHTML=REC.ev.slice(-16).map(e=>`<span class="chip">${esc(nm(e.m,'sol'))}</span>`).join(''); L.hidden=!REC.on||!REC.ev.length;
@@ -2518,7 +2647,7 @@ function recStart(){
   if(REC.mode==='nhip'){ REC.t0=now+REC.meter*beat; REC.nextClick=now; REC.beatI=0; recClicks(); REC.clk=setInterval(recClicks,40); }
   REC.startAt=performance.now()/1000; REC.tick=setInterval(recLive,500);
   $('#r-out').hidden=true; recLive(); recUi();
-  if(!MIC.on) toast('Đang ghi từ đàn ảo. Muốn ghi đàn thật thì bấm Nghe đàn thật.');
+  if(!MIC.on&&!MIDIIN.on) toast('Đang ghi từ đàn ảo. Muốn ghi đàn thật thì nối dây USB hoặc bấm Nghe đàn thật.');
 }
 function recStop(){
   if(!REC.on) return; REC.on=false; clearInterval(REC.clk); REC.clk=0; clearInterval(REC.tick); $('#r-live').hidden=true;
@@ -2531,7 +2660,7 @@ function recStop(){
 function recUi(){ const b=$('#r-go'); b.textContent=REC.on?'■ Dừng ghi':(REC.res?'● Ghi lại':'● Bắt đầu ghi'); b.classList.toggle('on',REC.on);
   if(!REC.on) $('#r-status').textContent=REC.res?'Xong. Bản nhạc ở ngay bên dưới.':(REC.ev.length?'':'Bấm Bắt đầu ghi rồi đàn.'); }
 // khoảng cách hay gặp nhất giữa hai nốt liền nhau coi là một phách (nốt đen), tinh chỉnh ±15% cho khớp mọi khoảng cách
-function recGuessBeat(ts){
+function recGuessBeat(ts,hint){
   const d=[]; for(let i=1;i<ts.length;i++){ const x=ts[i]-ts[i-1]; if(x>0.12&&x<2.5) d.push(x); }
   if(!d.length) return 0.75;
   let mode=d[0], best=-1; d.forEach(c=>{ const k=d.reduce((a,x)=>a+Math.exp(-Math.pow(Math.log(x/c)/0.12,2)/2),0); if(k>best){ best=k; mode=c; } });
@@ -2542,18 +2671,24 @@ function recGuessBeat(ts){
   let b=mode, bs=-1;
   [[1,1],[0.5,0.85],[2/3,0.92],[0.75,0.92],[1.5,0.92],[4/3,0.92],[2,0.9]].forEach(([k,w])=>{ const m0=mode*k; if(m0<0.3||m0>1.4) return;
     for(let c=m0*0.9;c<=m0*1.1;c+=m0*0.0025){ const sc=fit(c)*w; if(sc>bs){ bs=sc; b=c; } } });
+  // tệp ghi từ đàn có tốc độ máy đếm nhịp lúc ghi: em đàn theo tiếng gõ thì phách đó khớp, lấy luôn
+  if(hint>=0.3&&hint<=1.4&&ts.length>2&&fit(hint)>=bs*0.97){ b=hint; recGuessBeat.hit=1; }
   return b;
 }
-function recTranscribe(){
+function recTranscribe(o){
+  o=o||{}; const mode=o.mode||REC.mode;
   const ev=REC.ev.slice().sort((a,b)=>a.t-b.t); if(!ev.length) return null;
-  const G=[]; ev.forEach(e=>{ const g=G[G.length-1]; if(g&&e.t-g.t<=0.06){ if(!g.ms.includes(e.m)) g.ms.push(e.m); } else G.push({t:e.t,ms:[e.m]}); });
+  const G=[]; ev.forEach(e=>{ const g=G[G.length-1]; if(g&&e.t-g.t<=0.06){ if(!g.ms.includes(e.m)){ g.ms.push(e.m); if(e.v) g.v=Math.max(g.v||0,e.v); } } else G.push(e.v?{t:e.t,ms:[e.m],v:e.v}:{t:e.t,ms:[e.m]}); });
   G.forEach((g,i)=>{ const nx=i+1<G.length?G[i+1].t:Infinity; let end=nx;
     const qz=REC.quiet.find(([a])=>a>g.t+0.08&&a<nx); if(qz) end=Math.min(end,qz[0]);
     const rel=REC.offs.filter(o=>g.ms.includes(o.m)&&o.t>g.t&&o.t<nx); if(rel.length) end=Math.min(end,Math.max(...rel.map(o=>o.t)));
     g.end=isFinite(end)?end:null; });
-  const u=REC.mode==='nhip'?30/REC.bpm:recGuessBeat(G.map(g=>g.t))/2, t0=REC.mode==='nhip'?REC.t0:G[0].t;
-  const nm_=ev.filter(e=>e.src==='mic').length, src=nm_===ev.length?'mic':nm_?'ca-hai':'ao';
-  return {u,t0:t0,G,meter:REC.meter,mode:REC.mode,src,luc:Date.now()};
+  recGuessBeat.hit=0;
+  const u=mode==='nhip'?30/REC.bpm:recGuessBeat(G.map(g=>g.t),o.hint)/2, t0=mode==='nhip'?REC.t0:G[0].t;
+  const ss=[...new Set(ev.map(e=>e.src))], src=ss.length===1?ss[0]:'tron';
+  const r={u,t0:t0,G,meter:o.meter||REC.meter,mode,src,luc:o.luc||Date.now()};
+  if(o.hint&&recGuessBeat.hit) r.nhipTep=1; if(o.title) r.title=o.title;
+  return r;
 }
 // làm tròn về ô móc đơn (q = ô bắt đầu, e = ô kết thúc)
 function recSegs(res,scale){
@@ -2627,29 +2762,32 @@ function recExport(){
   const res=REC.res; if(!res) return '';
   const u=res.u*REC.scale, beat=u*2, bpm=Math.round(60/beat), segs=recSegs(res,REC.scale), bar=res.meter*2;
   const bai=($('#r-title')&&$('#r-title').value.trim())||res.title||'', d=new Date(res.luc||Date.now()), p2=x=>String(x).padStart(2,'0');
-  const src={mic:'micro nghe đàn thật',ao:'đàn ảo trên màn hình','ca-hai':'micro và đàn ảo'}[res.src]||'micro hoặc đàn ảo';
+  const src={mic:'micro nghe đàn thật',ao:'đàn ảo trên màn hình','ca-hai':'micro và đàn ảo',midi:'dây USB nối từ đàn thật (đúng từng nốt)',tep:'tệp MIDI đàn tự ghi vào USB (đúng từng nốt)',tron:'nhiều nguồn cùng lúc'}[res.src]||'micro hoặc đàn ảo';
+  const chuan=res.src==='midi'||res.src==='tep', coLuc=res.G.some(g=>g.v);
   const rows=[], devs=[];
   segs.forEach((sg,i)=>{ const g=res.G[i], dev=Math.round((g.t-(res.t0+sg.q*u))*1000), L=sg.e-sg.q;
     devs.push({i:i+1,dev});
     const lech=Math.abs(dev)<beat*120?`đúng nhịp (${dev>=0?'+':''}${dev} ms)`:dev<0?`sớm ${-dev} ms`:`trễ ${dev} ms`;
     const giu=g.end!=null?`${(g.end-g.t).toFixed(2)} giây`:'không đo được';
-    rows.push([i+1,Math.floor(sg.q/bar)+1,(sg.q%bar)/2+1,sg.ms.map(m=>`${nm(m,'sol')} (${midiName(m).replace('#','♯')})`).join(' + '),DUR_VI[L]||`dài ${L/2} phách`,lech,giu].join(' | ')); });
+    const cot=[i+1,Math.floor(sg.q/bar)+1,(sg.q%bar)/2+1,sg.ms.map(m=>`${nm(m,'sol')} (${midiName(m).replace('#','♯')})`).join(' + '),DUR_VI[L]||`dài ${L/2} phách`,lech,giu];
+    if(coLuc) cot.push(g.v||'');
+    rows.push(cot.join(' | ')); });
   const tb=devs.length>1?Math.round(devs.reduce((a,x)=>a+Math.abs(x.dev),0)/devs.length):0, mx=devs.reduce((a,x)=>Math.abs(x.dev)>Math.abs(a.dev)?x:a,{i:0,dev:0});
   const nho=bai?`Bài tôi định đàn: ${bai}.`:'Tôi chưa ghi tên bài; nếu nhận ra giai điệu quen thuộc thì so với bài đó, nếu không thì nhận xét nhịp và cách đàn.';
   return [
 `Nhờ Claude: dưới đây là bản ghi tôi vừa đàn piano, do trang "Sổ tập Piano" tự nghe rồi chép lại. ${nho}`,
 `Hãy giúp tôi: (1) so với bản gốc của bài, chỉ ra từng chỗ sai nốt, thiếu hoặc thừa nốt, sai độ dài; (2) nhận xét độ đều nhịp dựa vào cột "Lệch so với nhịp"; (3) hướng dẫn cách tập để đàn đúng những chỗ đó: tập chậm thế nào, dùng ngón nào, đếm nhịp ra sao.`,
-`Lưu ý khi đọc: tốc độ do trang ${res.mode==='nhip'?'lấy theo máy đếm nhịp tôi bật lúc đàn':'tự đoán, nên độ dài nốt có thể bị viết dài hoặc ngắn gấp đôi'}; qua micro, mỗi lần gõ phím trang chỉ ghi nốt vang to nhất (hợp âm có thể thiếu nốt); khi đè pedal trang không đo được lúc thả phím.`,
+`Lưu ý khi đọc: tốc độ ${res.mode==='nhip'?'lấy theo máy đếm nhịp tôi bật lúc đàn':res.nhipTep?'lấy theo máy đếm nhịp của đàn ghi trong tệp':'do trang tự đoán, nên độ dài nốt có thể bị viết dài hoặc ngắn gấp đôi'}; ${chuan?'nốt, hợp âm và lúc thả phím lấy thẳng từ đàn nên chính xác'+(coLuc?'; cột "Lực bấm" từ 1 (rất nhẹ) tới 127 (rất mạnh)':''):'qua micro, mỗi lần gõ phím trang chỉ ghi nốt vang to nhất (hợp âm có thể thiếu nốt); khi đè pedal trang không đo được lúc thả phím'}.`,
 ``,
 `THÔNG TIN BẢN GHI`,
 `Ngày ghi: ${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()} lúc ${p2(d.getHours())}:${p2(d.getMinutes())} · Nguồn: ${src}`,
-`Nhịp ${res.meter}/4 · Tốc độ khoảng ${bpm} phách/phút (${res.mode==='nhip'?'theo máy đếm nhịp':'trang tự đoán'}) · ${segs.length} lần bấm phím`,
+`Nhịp ${res.meter}/4 · Tốc độ khoảng ${bpm} phách/phút (${res.mode==='nhip'?'theo máy đếm nhịp':res.nhipTep?'theo máy đếm nhịp của đàn':'trang tự đoán'}) · ${segs.length} lần bấm phím`,
 ``,
 `1) BẢN NHẠC DẠNG ABC (dán vào trang đọc ABC bất kỳ để xem khuông nhạc)`,
 recAbc(segs,res.meter,bpm,bai),
 ``,
 `2) TỪNG LẦN BẤM PHÍM (phách tính từ 1; "Lệch so với nhịp" là bấm sớm hay trễ so với chỗ trang viết nốt trên khuông)`,
-`STT | Ô nhịp | Phách | Nốt | Viết thành | Lệch so với nhịp | Giữ phím`,
+`STT | Ô nhịp | Phách | Nốt | Viết thành | Lệch so với nhịp | Giữ phím${coLuc?' | Lực bấm':''}`,
 ...rows,
 ``,
 `3) ĐỘ ĐỀU NHỊP: lệch trung bình ${tb} ms (khoảng ${Math.round(tb/(beat*10))}% một phách)${mx.i&&Math.abs(mx.dev)>=beat*120?`; lệch nhiều nhất ở lần bấm ${mx.i} (${mx.dev<0?'sớm':'trễ'} ${Math.abs(mx.dev)} ms)`:''}.`
@@ -2700,12 +2838,106 @@ function bindRec(){
   $('#r-save').addEventListener('click',recSave);
   $('#r-copy').addEventListener('click',recCopy);
   $('#r-dl').addEventListener('click',recDownload);
+  $('#r-file').addEventListener('click',()=>$('#r-file-in').click());
+  $('#r-file-in').addEventListener('change',e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; recOpenFile(f); });
   $('#r-title').addEventListener('input',()=>{ if(REC.res) $('#r-text').textContent=recExport(); });
   $('#r-list').addEventListener('click',e=>{ const o=e.target.closest('[data-open]'), d=e.target.closest('[data-del]'), L=recSaved();
     if(o){ const x=L[+o.dataset.open]; if(!x) return; recPlayStop(); REC.res=x.res; REC.scale=x.scale||1; REC.meter=x.res.meter; setSeg('#r-meter',REC.meter); $('#r-title').value=x.res.title||''; recRender(); recUi(); $('#r-out').scrollIntoView({behavior:'smooth',block:'start'}); }
     if(d&&confirm('Xoá bản ghi này?')){ L.splice(+d.dataset.del,1); lsWrite('pianoBanGhi',L); recList(); } });
   window.addEventListener('resize',()=>{ if(REC.res&&curTab==='ghinhac') recRender(); });
   recList(); recUi();
+}
+
+/* ---------- Đàn thật qua dây USB (Web MIDI) và tệp .mid đàn ghi vào USB ----------
+   Đàn CLP-470 gửi từng lần bấm, thả phím qua cổng USB TO HOST: trang nhận đúng nốt, đủ hợp âm, không cần micro.
+   Đàn tự kêu nên trang không phát tiếng, chỉ sáng phím và chấm như đàn ảo. Chrome, Edge có; iPad Safari chưa có. */
+const MIDIIN={on:false,acc:null,names:[],cur:false,t:0,v:0};
+const inClaude=()=>location.hostname.endsWith('claude.ai')||location.hostname.endsWith('claudeusercontent.com');
+function midiMsg(e){
+  const d=e.data; if(!d||d.length<2) return; const st=d[0]&0xf0, ch=d[0]&15, m=d[1], v=d.length>2?d[2]:0;
+  if(ch===9||m<LO||m>HI) return; // kênh 10 là trống, bỏ qua
+  const t=ac&&ac.state==='running'?ac.currentTime-Math.min(0.2,Math.max(0,(performance.now()-e.timeStamp)/1000)):0;
+  if(st===0x90&&v>0){
+    const k=keyEls.get(m); if(k) k.classList.add('down');
+    Object.assign(MIDIIN,{cur:true,t:t||(ac?ac.currentTime:0),v}); try{ emit(m); } finally { MIDIIN.cur=false; } micShow(m);
+  } else if(st===0x80||(st===0x90&&v===0)){
+    const k=keyEls.get(m); if(k) k.classList.remove('down');
+    if(REC.on) REC.offs.push({m,t:t||ac.currentTime});
+  }
+}
+function midiHook(){
+  if(!MIDIIN.acc) return; MIDIIN.names=[];
+  MIDIIN.acc.inputs.forEach(i=>{ i.onmidimessage=MIDIIN.on?midiMsg:null; if(MIDIIN.on&&i.state==='connected') MIDIIN.names.push(i.name); });
+  midiUi();
+}
+async function midiStart(quiet){
+  if(!quiet) audio();
+  if(!navigator.requestMIDIAccess){ if(!quiet) midiFail(inClaude()?'Trang trên claude.ai không nối được đàn qua dây. Mở so-tap-piano.vercel.app bằng Chrome hoặc Edge.':'Trình duyệt này chưa nối được đàn qua dây USB (iPad, Safari chưa có). Dùng Chrome hoặc Edge, hoặc ghi vào USB rồi mở tệp .mid.'); return; }
+  try{ MIDIIN.acc=await navigator.requestMIDIAccess(); }
+  catch(err){ if(!quiet) midiFail(inClaude()?'Trang trên claude.ai không nối được đàn qua dây. Mở so-tap-piano.vercel.app bằng Chrome hoặc Edge.':'Chưa được phép nối đàn: hãy cho phép trang dùng thiết bị MIDI rồi thử lại.'); return; }
+  MIDIIN.on=true; lsWrite('pianoMidiNoi',true); MIDIIN.acc.onstatechange=midiHook; midiHook();
+  if(MIDIIN.names.length&&MIC.on) micStop(); // có dây thì không cần micro (micro dễ nghe nhầm)
+  if(MIDIIN.names.length) toast(`Đã nối đàn: ${MIDIIN.names.join(', ')}. Đàn một nốt thử xem.`);
+  else if(!quiet) toast('Chưa thấy đàn. Cắm dây từ cổng USB TO HOST của đàn vào máy rồi bật đàn.');
+}
+function midiStop(){ MIDIIN.on=false; lsWrite('pianoMidiNoi',false); midiHook(); micShow(-1); $$('.midi-btn').forEach(b=>b.blur()); }
+function midiFail(msg){ MIDIIN.on=false; midiUi(); $$('.midi-msg').forEach(e=>e.textContent=msg); toast(msg); }
+function midiUi(){
+  $$('.midi-btn').forEach(b=>{ b.setAttribute('aria-pressed',MIDIIN.on?'true':'false'); b.textContent=MIDIIN.on?(MIDIIN.names.length?'Ngắt đàn USB':'Chờ đàn USB…'):'Nối đàn qua USB'; });
+  $$('.midi-msg').forEach(e=>e.textContent=MIDIIN.on?(MIDIIN.names.length?`Đã nối: ${MIDIIN.names.join(', ')}. Đàn trên đàn thật, trang nhận đúng từng nốt.`:'Chưa thấy đàn: kiểm tra dây USB TO HOST và bật đàn.'):'');
+  $$('.dock-midi').forEach(b=>b.hidden=!navigator.requestMIDIAccess&&!MIDIIN.on); // iPad: bỏ nút ở thanh đàn cho gọn
+}
+function bindMidi(){
+  document.addEventListener('click',e=>{ const b=e.target.closest('.midi-btn'); if(b){ if(MIDIIN.on) midiStop(); else midiStart(); } });
+  midiUi();
+  if(lsRead('pianoMidiNoi',false)&&navigator.requestMIDIAccess&&!inClaude()) midiStart(true); // lần trước đã nối thì tự nối lại
+}
+// Đọc tệp MIDI chuẩn (SMF): lấy mọi lần bấm, thả phím, đổi nhịp độ ra giây; số phách mỗi ô nhịp lấy từ tệp
+function smfParse(buf){
+  const u8=new Uint8Array(buf), N=u8.length; let p=0;
+  const str=n=>{ let x=''; for(let i=0;i<n;i++) x+=String.fromCharCode(u8[p+i]); return x; };
+  const u32=q=>((u8[q]<<24)>>>0)+(u8[q+1]<<16)+(u8[q+2]<<8)+u8[q+3], u16=q=>(u8[q]<<8)+u8[q+1];
+  if(N<14||str(4)!=='MThd') throw new Error('khong-phai-midi');
+  const ntr=u16(10), div=u16(12); if(div&0x8000) throw new Error('smpte');
+  p=8+u32(4); const ev=[], tempo=[], sig=[];
+  for(let k=0;k<ntr&&p+8<=N;k++){
+    const id=str(4), end=Math.min(N,p+8+u32(p+4)); p+=8;
+    if(id!=='MTrk'){ p=end; continue; }
+    let tick=0, run=0;
+    const vlq=()=>{ let v=0,c; do{ c=u8[p++]; v=v*128+(c&0x7f); }while(c&0x80&&p<end); return v; };
+    while(p<end){
+      tick+=vlq(); let st=u8[p];
+      if(st&0x80){ p++; if(st<0xf0) run=st; } else st=run; // trạng thái chạy: dùng lại mã lệnh trước
+      if(!st) break;
+      if(st===0xff){ const ty=u8[p++], l=vlq();
+        if(ty===0x51&&l===3) tempo.push({tick,us:(u8[p]<<16)+(u8[p+1]<<8)+u8[p+2]});
+        else if(ty===0x58&&l>=2) sig.push({tick,n:u8[p],d:1<<u8[p+1]});
+        p+=l; if(ty===0x2f) break; }
+      else if(st===0xf0||st===0xf7){ p+=vlq(); }
+      else { const hi=st&0xf0, a=u8[p++], b=(hi===0xc0||hi===0xd0)?0:u8[p++];
+        if((st&15)!==9&&(hi===0x90||hi===0x80)) ev.push({tick,m:a,on:hi===0x90&&b>0,v:b}); }
+    }
+    p=end;
+  }
+  tempo.sort((a,b)=>a.tick-b.tick); ev.sort((a,b)=>a.tick-b.tick);
+  const seg=[{tick:0,s:0,us:tempo.length&&tempo[0].tick===0?tempo[0].us:500000}];
+  tempo.forEach(x=>{ const z=seg[seg.length-1]; if(x.tick===z.tick){ z.us=x.us; return; } seg.push({tick:x.tick,s:z.s+(x.tick-z.tick)*z.us/1e6/div,us:x.us}); });
+  const sec=tk=>{ let z=seg[0]; for(const x of seg){ if(x.tick<=tk) z=x; else break; } return z.s+(tk-z.tick)*z.us/1e6/div; };
+  ev.forEach(e=>e.t=sec(e.tick));
+  return {ev,beat:seg[0].us/1e6,sig:sig[0]||null};
+}
+async function recOpenFile(f){
+  if(!f) return; if(REC.on) recStop(); recPlayStop();
+  let r; try{ r=smfParse(await f.arrayBuffer()); }catch(e){ toast('Không đọc được tệp này. Hãy chọn tệp đuôi .mid do đàn ghi.'); return; }
+  const on=r.ev.filter(e=>e.on&&e.m>=LO&&e.m<=HI);
+  if(!on.length){ toast('Tệp không có nốt nào (tệp ghi âm WAV thì trang chưa đọc được).'); return; }
+  REC.ev=on.map(e=>({m:e.m,t:e.t,src:'tep',v:e.v})); REC.offs=r.ev.filter(e=>!e.on).map(e=>({m:e.m,t:e.t})); REC.quiet=[]; REC.qs=0; REC.scale=1;
+  const meter=r.sig&&r.sig.d===4&&[2,3,4].includes(r.sig.n)?r.sig.n:REC.meter; REC.meter=meter; setSeg('#r-meter',meter);
+  const title=f.name.replace(/\.midi?$/i,'');
+  if(!$('#r-title').value.trim()) $('#r-title').value=title;
+  REC.res=recTranscribe({mode:'tudo',hint:r.beat,meter,title,luc:f.lastModified||Date.now()});
+  recUi(); recRender(); $('#r-status').textContent=`Đã mở ${f.name}: ${on.length} nốt.`;
+  setTimeout(()=>$('#r-out').scrollIntoView({block:'start'}),60);
 }
 
 /* ---------- Thẻ ---------- */
@@ -2725,9 +2957,9 @@ $('#t-open').addEventListener('click',()=>{ const l=curLesson(); setTab('lotrinh
 
 /* ---------- Khởi động ---------- */
 const _emit=emit;
-emit=function(m){ if(REC.on&&curTab==='ghinhac') recNote(m); if(recorderHook&&curTab==='lotrinh'&&!(act&&act.kind==='practice')) recorderHook(m); _emit(m); };
+emit=function(m){ if(CAL.on&&!MIC.emitT&&!MIDIIN.cur){ calPick(m); return; } if(REC.on&&curTab==='ghinhac') recNote(m); if(recorderHook&&curTab==='lotrinh'&&!(act&&act.kind==='practice')) recorderHook(m); _emit(m); };
 $('#t-lt-open').addEventListener('click',e=>openTheory(+e.currentTarget.dataset.n||1));
-buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildSongs(); buildTheory(); buildChords(); bindFall(); bindMic(); bindRec(); bindMetro(); bindTimer(); bindLog(); buildChecks();
+buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildSongs(); buildTheory(); buildChords(); bindFall(); bindMic(); bindCal(); bindMidi(); bindRec(); bindMetro(); bindTimer(); bindLog(); buildChecks();
 const lvSel=$('#g-level'); LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i;o.textContent=lv.ten;lvSel.appendChild(o);});
 lvSel.value=G.lv; lvSel.addEventListener('change',()=>setLevel(lvSel.value)); $('#g-reset').addEventListener('click',()=>setLevel(G.lv));
 renderAnswers(); nextQ(); renderGame();
