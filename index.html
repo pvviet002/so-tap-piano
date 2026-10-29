@@ -136,6 +136,10 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .player .ph{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
 .player .ph b{font-weight:600}
 .status{font-size:.88rem;color:var(--muted);min-height:1.4em}
+.r-live{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;margin:8px 0}
+.r-sheet{display:flex;flex-direction:column;gap:2px;overflow-x:auto;padding-bottom:4px}
+.r-item{gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.r-item b{flex:1 1 auto;min-width:0}
 .status.good{color:var(--ok);font-weight:600}
 .roll{overflow-x:auto;border-radius:8px;background:var(--card);border:1px solid var(--line);position:relative}
 .roll-in{position:relative}
@@ -392,6 +396,7 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
     <button class="tab" role="tab" data-tab="lythuyet" aria-selected="false">Nhạc lý</button>
     <button class="tab" role="tab" data-tab="docnot" aria-selected="false">Đọc nốt</button>
     <button class="tab" role="tab" data-tab="hopam" aria-selected="false">Hợp âm</button>
+    <button class="tab" role="tab" data-tab="ghinhac" aria-selected="false">Ghi nhạc</button>
     <button class="tab" role="tab" data-tab="nhip" aria-selected="false">Máy đếm nhịp</button>
     <button class="tab" role="tab" data-tab="nhatky" aria-selected="false">Nhật ký</button>
     <button class="tab" role="tab" data-tab="cayan" aria-selected="false">Đàn KR-570</button>
@@ -564,6 +569,59 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       <button class="btn" id="prog-stop">Dừng</button>
     </div>
     <p class="status" id="prog-status"></p>
+  </div>
+</section>
+
+<!-- GHI NHẠC -->
+<section class="pane" id="p-ghinhac" hidden>
+  <div class="card">
+    <h2>Ghi bản nhạc</h2>
+    <p class="muted">Em đàn, trang nghe rồi viết ra khuông nhạc đúng như em vừa chơi. Đàn trên đàn thật thì bật <b>Nghe đàn thật</b>; đàn trên đàn ảo bên dưới cũng được.</p>
+    <div class="row">
+      <div class="seg" id="r-mode" role="group" aria-label="Cách giữ nhịp">
+        <button data-v="tudo" aria-pressed="true">Đàn tự do</button>
+        <button data-v="nhip" aria-pressed="false">Theo máy đếm nhịp</button>
+      </div>
+      <div class="seg" id="r-meter" role="group" aria-label="Số phách mỗi ô nhịp">
+        <button data-v="2" aria-pressed="false">2/4</button>
+        <button data-v="3" aria-pressed="false">3/4</button>
+        <button data-v="4" aria-pressed="true">4/4</button>
+      </div>
+      <label class="tempo" id="r-bpm-box" hidden>Nhịp <input type="range" id="r-bpm" min="40" max="120" value="72"><span class="num" id="r-bpm-v">72</span></label>
+    </div>
+    <div class="row">
+      <button class="btn pri" id="r-go" style="min-width:130px">Bắt đầu ghi</button>
+      <button class="btn mic-btn" aria-pressed="false">Nghe đàn thật</button>
+      <span class="micmeter" aria-hidden="true"><i></i></span>
+      <span class="status" id="r-status"></span>
+    </div>
+    <div class="r-live" id="r-live" aria-live="polite"></div>
+    <p class="muted" style="font-size:.86rem">Micro nghe rõ nhất khi em đàn <b>từng nốt một</b> (giai điệu một tay). Đàn hợp âm thì micro chỉ ghi được nốt vang to nhất; đàn ảo thì ghi đủ cả hợp âm. Trên trang claude.ai micro không chạy, hãy mở bản web <b>so-tap-piano.vercel.app</b>.</p>
+  </div>
+  <div class="card" id="r-out" hidden>
+    <div class="row" style="justify-content:space-between"><h3>Bản nhạc em vừa đàn</h3><span class="muted" id="r-info"></span></div>
+    <div class="r-sheet" id="r-sheet"></div>
+    <div class="row">
+      <button class="btn" id="r-play">Nghe lại</button>
+      <button class="btn" id="r-longer">Viết nốt dài hơn</button>
+      <button class="btn" id="r-shorter">Viết nốt ngắn hơn</button>
+      <label class="tempo"><input type="checkbox" id="r-lab" checked> Ghi tên nốt</label>
+      <button class="btn" id="r-save">Lưu bản này</button>
+    </div>
+    <p class="muted" style="font-size:.86rem">Trang chỉ đoán được tốc độ em đàn. Nếu nốt trên khuông trông dài hay ngắn gấp đôi so với lúc em đàn, bấm <b>Viết nốt dài hơn</b> hoặc <b>Viết nốt ngắn hơn</b>: tên nốt và giai điệu vẫn giữ nguyên.</p>
+  </div>
+  <div class="card">
+    <h3>Các bản đã lưu</h3>
+    <div id="r-list"></div>
+    <p class="muted" style="font-size:.86rem">Bản lưu nằm trên trình duyệt của máy này.</p>
+  </div>
+  <div class="card">
+    <h3>Gợi ý cho phụ huynh</h3>
+    <ul class="list">
+      <li>Cho em đàn lại một câu vừa học rồi cùng xem bản nhạc: nốt nào trang viết khác bài mẫu là chỗ em đàn sai nốt hoặc sai độ dài.</li>
+      <li>Chọn <b>Theo máy đếm nhịp</b> khi em đã quen giữ nhịp: trang gõ một ô nhịp đếm vào rồi em mới đàn, độ dài nốt ghi chính xác hơn.</li>
+      <li>Em tự sáng tác vài nốt? Bấm <b>Lưu bản này</b> để giữ lại bài của em.</li>
+    </ul>
   </div>
 </section>
 
@@ -880,7 +938,7 @@ function noteOn(m){
   emit(m);
 }
 function noteOff(m){
-  const v=held.get(m); if(!v) return; held.delete(m);
+  const v=held.get(m); if(!v) return; held.delete(m); recOff(m);
   const k=keyEls.get(m); if(k) k.classList.remove('down');
   if(pedal) sustained.add(v); else releaseVoice(v);
 }
@@ -1836,8 +1894,16 @@ function staffSVG(o){
       s+=noteAt(xa,ya,'moc',{down,noflag:true,stemTo:e,cls:c[0]})+noteAt(xb,yb,'moc',{down,noflag:true,stemTo:e,cls:c[1]});
       s+=down?`<rect class="nf" x="${xa-6.3}" y="${e-4}" width="25.4" height="4.5"/>`:`<rect class="nf" x="${xa+4.9}" y="${e}" width="25.4" height="4.5"/>`;
       if(it.lab) s+=lab(cx,down?e:Math.max(ya,yb),base,it.lab); ys[i]=ya; return; }
-    if(it.ch){ let base=y0, ymax=0; it.ch.forEach(n=>{ const [y,b]=where(n,it.clef); base=b; ymax=Math.max(ymax,y); s+=ledgers(cx,y,b)+noteAt(cx,y,'tron',{cls:it.cls}); });
-      if(it.lab) s+=lab(cx,ymax,base,it.lab); ys[i]=ymax; return; }
+    if(it.ch){ let base=y0, ymax=0, ymin=1e9; const d=it.d||'tron', c=it.cls||'';
+      it.ch.forEach((n,k)=>{ const [y,b]=where(n,it.clef); base=b; ymax=Math.max(ymax,y); ymin=Math.min(ymin,y); s+=ledgers(cx,y,b);
+        if(it.acc&&it.acc[k]) s+=`<text class="acc" x="${cx-16}" y="${y+6}">♯</text>`;
+        s+=`<ellipse class="${d==='den'||d==='moc'?'nf':'nh'} ${c}" cx="${cx}" cy="${y}" rx="6.2" ry="4.4" transform="rotate(-20 ${cx} ${y})"/>`;
+        if(it.dot) s+=`<circle class="nf ${c}" cx="${cx+11}" cy="${(((y-b)%10+10)%10)===0?y-4:y}" r="1.9"/>`; });
+      const down=(ymin+ymax)/2<=base+20;
+      if(d!=='tron'){
+        if(down){ const e=ymax+31; s+=`<line class="st ${c}" x1="${cx-5.6}" x2="${cx-5.6}" y1="${ymin}" y2="${e}"/>`; if(d==='moc') s+=`<path class="fl ${c}" d="M${cx-5.6} ${e} q1.5 -8 8 -11 q4 -3 2 -11"/>`; }
+        else { const e=ymin-31; s+=`<line class="st ${c}" x1="${cx+5.6}" x2="${cx+5.6}" y1="${ymax}" y2="${e}"/>`; if(d==='moc') s+=`<path class="fl ${c}" d="M${cx+5.6} ${e} q1.5 8 8 11 q4 3 2 11"/>`; } }
+      if(it.lab) s+=lab(cx,d!=='tron'&&down?ymax+31:ymax,base,it.lab); ys[i]=ymax; return; }
     if(it.n){ const [y,base]=where(it.n,it.clef), down=it.down!=null?it.down:(y<=base+20), onLine=((y-base)%10+10)%10===0;
       s+=ledgers(cx,y,base);
       if(it.acc) s+=`<text class="acc" x="${cx-16}" y="${y+6}">${{'#':'♯',b:'♭',n:'♮'}[it.acc]}</text>`;
@@ -2360,7 +2426,7 @@ function micExpected(){
   if(curTab==='docnot'&&G.q) return [G.q.m];
   return null;
 }
-function micEmit(m){ const k=keyEls.get(m); if(k){ k.classList.add('down'); setTimeout(()=>k.classList.remove('down'),260); } MIC.lag=0.08; try{ emit(m); } finally { MIC.lag=0; } micShow(m); }
+function micEmit(m){ const k=keyEls.get(m); if(k){ k.classList.add('down'); setTimeout(()=>k.classList.remove('down'),260); } MIC.lag=0.08; MIC.emitT=MIC.lastOnset; try{ emit(m); } finally { MIC.lag=0; MIC.emitT=0; } micShow(m); }
 function micShow(m){ $$('.mic-last').forEach(e=>e.textContent=m>=0?`nghe được: ${nm(m,'sol')} (${nm(m,'abc')})`:''); }
 const MIC_LEN=6144, MIC_WAIT=100;
 function onsetSpectrum(pre,post){ const d=new Float32Array(post.length); for(let i=0;i<post.length;i++) d[i]=Math.max(0,post[i]-pre[i]*0.75); return d; }
@@ -2380,6 +2446,7 @@ function micTick(){
   const n=MIC.buf.length; let e=0; for(let i=n-1024;i<n;i++) e+=MIC.buf[i]*MIC.buf[i]; const rms=Math.sqrt(e/1024);
   $$('.micmeter i').forEach(x=>x.style.width=Math.min(100,rms*600)+'%');
   const t=ac.currentTime, thr=0.03-MIC.sens*0.0026;
+  if(REC.on){ const q=rms<thr*0.55; if(q&&!REC.qs) REC.qs=t; else if(!q&&REC.qs){ if(t-REC.qs>0.12) REC.quiet.push([REC.qs,t]); REC.qs=0; } } // im lặng = em đã thả phím
   const pageStart=OUTS.some(o=>o.a<=t&&o.a>=t-0.1)||t-lastClickAt<0.08;
   if(!MIC.pending&&!pageStart&&t-MIC.lastOnset>0.11&&rms>thr&&rms>MIC.prev*1.45){
     MIC.lastOnset=t; const pre=MIC.buf.slice(0,n-1024); // phổ ngay trước tiếng gõ, để trừ nốt cũ còn ngân
@@ -2405,11 +2472,135 @@ function bindMic(){
   const s=$('#mic-sens'); if(s){ s.value=MIC.sens; $('#mic-sens-v').textContent=MIC.sens; s.addEventListener('input',()=>{ MIC.sens=+s.value; $('#mic-sens-v').textContent=MIC.sens; lsWrite('pianoMicNhay',MIC.sens); }); }
 }
 
+/* ---------- Ghi bản nhạc: nghe em đàn rồi viết ra khuông ----------
+   Mỗi tiếng gõ phím (micro hoặc đàn ảo) ghi {nốt, thời điểm}; lúc im lặng (thả phím) ghi lại để biết chỗ nghỉ.
+   Dừng ghi: gom nốt gần như cùng lúc thành hợp âm → độ dài một phách lấy theo máy đếm nhịp, hoặc đoán bằng khoảng cách
+   hay gặp nhất giữa hai nốt (coi là nốt đen) → làm tròn về ô móc đơn → chia ô nhịp → vẽ khuông. */
+const REC={on:false,mode:'tudo',bpm:72,meter:4,t0:0,ev:[],offs:[],quiet:[],qs:0,clk:0,nextClick:0,beatI:0,res:null,scale:1,lab:true,voices:[],playT:0};
+const midiName=m=>{ const pc=m%12; return 'CCDDEFFGGAAB'[pc]+([1,3,6,8,10].includes(pc)?'#':'')+(Math.floor(m/12)-1); };
+function recNote(m){ const t=MIC.emitT||ac.currentTime; REC.ev.push({m,t}); recLive(); }
+function recOff(m){ if(REC.on) REC.offs.push({m,t:ac.currentTime}); }
+function recLive(){
+  $('#r-live').innerHTML=REC.ev.slice(-16).map(e=>`<span class="chip">${esc(nm(e.m,'sol'))}</span>`).join('');
+  if(REC.on) $('#r-status').textContent=REC.ev.length?`Đã nghe ${REC.ev.length} nốt. Đàn xong thì bấm Dừng.`:(REC.mode==='nhip'?'':'Em đàn đi, trang đang nghe…');
+}
+function recClicks(){ const beat=60/REC.bpm; while(REC.nextClick<ac.currentTime+0.15){ click(REC.nextClick,REC.beatI%REC.meter===0); REC.nextClick+=beat; REC.beatI++; }
+  if(REC.on&&REC.mode==='nhip'&&!REC.ev.length){ const k=Math.floor((ac.currentTime-(REC.t0-REC.meter*beat))/beat)+1; $('#r-status').textContent=k<=REC.meter?`Đếm vào: ${k}…`:'Đàn đi!'; } }
+function recStart(){
+  audio(); recPlayStop(); Object.assign(REC,{ev:[],offs:[],quiet:[],qs:0,res:null,scale:1,on:true});
+  const beat=60/REC.bpm, now=ac.currentTime+0.1;
+  if(REC.mode==='nhip'){ REC.t0=now+REC.meter*beat; REC.nextClick=now; REC.beatI=0; recClicks(); REC.clk=setInterval(recClicks,40); }
+  $('#r-out').hidden=true; recLive(); recUi();
+  if(!MIC.on) toast('Đang ghi từ đàn ảo. Muốn ghi đàn thật thì bấm Nghe đàn thật.');
+}
+function recStop(){
+  if(!REC.on) return; REC.on=false; clearInterval(REC.clk); REC.clk=0;
+  if(REC.qs){ REC.quiet.push([REC.qs,ac.currentTime]); REC.qs=0; }
+  REC.res=recTranscribe(); recUi(); recRender();
+}
+function recUi(){ $('#r-go').textContent=REC.on?'Dừng ghi':'Bắt đầu ghi'; $('#r-go').classList.toggle('pri',!REC.on);
+  if(!REC.on) $('#r-status').textContent=REC.res?'Xong. Bản nhạc ở ngay bên dưới.':(REC.ev.length?'':'Bấm Bắt đầu ghi rồi đàn.'); }
+// khoảng cách hay gặp nhất giữa hai nốt liền nhau coi là một phách (nốt đen), tinh chỉnh ±15% cho khớp mọi khoảng cách
+function recGuessBeat(ts){
+  const d=[]; for(let i=1;i<ts.length;i++){ const x=ts[i]-ts[i-1]; if(x>0.12&&x<2.5) d.push(x); }
+  if(!d.length) return 0.75;
+  let mode=d[0], best=-1; d.forEach(c=>{ const k=d.reduce((a,x)=>a+Math.exp(-Math.pow(Math.log(x/c)/0.12,2)/2),0); if(k>best){ best=k; mode=c; } });
+  while(mode<0.3) mode*=2; while(mode>1.4) mode/=2;
+  let b=mode, bs=-1; for(let c=mode*0.85;c<=mode*1.15;c+=mode*0.005){ const u=c/2; let sc=0; d.forEach(x=>{ const f=x/u-Math.round(x/u); sc+=1-4*f*f; }); if(sc>bs){ bs=sc; b=c; } }
+  return b;
+}
+function recTranscribe(){
+  const ev=REC.ev.slice().sort((a,b)=>a.t-b.t); if(!ev.length) return null;
+  const G=[]; ev.forEach(e=>{ const g=G[G.length-1]; if(g&&e.t-g.t<=0.06){ if(!g.ms.includes(e.m)) g.ms.push(e.m); } else G.push({t:e.t,ms:[e.m]}); });
+  G.forEach((g,i)=>{ const nx=i+1<G.length?G[i+1].t:Infinity; let end=nx;
+    const qz=REC.quiet.find(([a])=>a>g.t+0.08&&a<nx); if(qz) end=Math.min(end,qz[0]);
+    const rel=REC.offs.filter(o=>g.ms.includes(o.m)&&o.t>g.t&&o.t<nx); if(rel.length) end=Math.min(end,Math.max(...rel.map(o=>o.t)));
+    g.end=isFinite(end)?end:null; });
+  const u=REC.mode==='nhip'?30/REC.bpm:recGuessBeat(G.map(g=>g.t))/2, t0=REC.mode==='nhip'?REC.t0:G[0].t;
+  return {u,t0:t0,G,meter:REC.meter};
+}
+// làm tròn về ô móc đơn (q = ô bắt đầu, e = ô kết thúc)
+function recSegs(res,scale){
+  const u=res.u*scale, L=[]; let last=-1;
+  res.G.forEach(g=>{ let q=Math.max(0,Math.round((g.t-res.t0)/u)); if(q<=last) q=last+1;
+    let e=g.end==null?q+2:Math.round((g.end-res.t0)/u); if(e<=q) e=q+1; L.push({q,e,ms:g.ms.slice().sort((a,b)=>a-b)}); last=q; });
+  for(let i=0;i<L.length-1;i++){ if(L[i].e>L[i+1].q) L[i].e=L[i+1].q; if(L[i+1].q-L[i].e===1) L[i].e=L[i+1].q; } // nghỉ lẻ một móc đơn thường là nhấc tay sớm
+  const z=L[L.length-1]; z.e=Math.min(z.e,z.q+8);
+  return L;
+}
+const R_NOTE=[[8,'tron',0],[6,'trang',1],[4,'trang',0],[3,'den',1],[2,'den',0],[1,'moc',0]], R_REST=[[4,'trang'],[2,'den'],[1,'moc']];
+function recTokens(segs,meter){
+  const bar=meter*2, end=Math.ceil(Math.max(...segs.map(x=>x.e))/bar)*bar, T=[]; let pos=0;
+  const put=(a,b,ms)=>{ let x=a; while(x<b){ const lim=Math.min(b,(Math.floor(x/bar)+1)*bar), full=!ms&&x%bar===0&&lim-x===bar;
+      if(full){ T.push({r:'tron',at:x}); x=lim; continue; }
+      const tab=ms?R_NOTE:R_REST, v=tab.find(r=>r[0]<=lim-x); T.push(ms?{ms,d:v[1],dot:v[2],at:x,tie:x+v[0]<b}:{r:v[1],at:x}); x+=v[0]; } };
+  segs.forEach(sg=>{ if(sg.q>pos) put(pos,sg.q,null); put(sg.q,sg.e,sg.ms); pos=sg.e; });
+  if(pos<end) put(pos,end,null);
+  return {T,bar,end};
+}
+function recRender(){
+  const res=REC.res; $('#r-out').hidden=!res;
+  if(!res){ $('#r-status').textContent='Chưa nghe được nốt nào. Bật Nghe đàn thật hoặc bấm đàn ảo rồi thử lại.'; return; }
+  const segs=recSegs(res,REC.scale), {T,bar,end}=recTokens(segs,res.meter), all=segs.flatMap(x=>x.ms);
+  const lo=Math.min(...all), hi=Math.max(...all), clef=lo>=57?'G':hi<=64?'F':'GF';
+  const per=$('#r-sheet').clientWidth<520?2:4, lines=[];
+  for(let b0=0;b0<end;b0+=bar*per){ const its=[], ties=[]; let prev=null;
+    T.filter(t=>t.at>=b0&&t.at<b0+bar*per).forEach(t=>{
+      if(t.at>b0&&t.at%bar===0) its.push({bar:true});
+      if(t.r){ its.push({r:t.r,clef:clef==='GF'?(prev&&prev<60?'F':'G'):undefined}); return; }
+      const one=t.ms.length===1, m=t.ms[0], black=x=>[1,3,6,8,10].includes(x%12);
+      if(one) its.push({n:midiName(m),d:t.d,dot:!!t.dot,acc:black(m)?'#':null,lab:REC.lab?nm(m,'sol'):null});
+      else its.push({ch:t.ms.map(midiName),d:t.d,dot:!!t.dot,acc:t.ms.map(black),lab:REC.lab?t.ms.map(x=>nm(x,'sol')).join(' '):null,w:REC.lab?58:44});
+      if(t.tie) ties.push(its.length-1); prev=m; });
+    its.push({bar:b0+bar*per>=end?'end':true});
+    // dấu nối: nốt bị cắt ngang (qua vạch nhịp hoặc không viết được bằng một nốt) nối sang nốt kế tiếp
+    const slurs=ties.map(i=>{ let j=i+1; while(j<its.length&&its[j].bar) j++; return j<its.length&&(its[j].n||its[j].ch)?[i,j]:null; }).filter(Boolean);
+    lines.push({items:its,slurs,first:b0===0}); }
+  const draw=minW=>lines.map(l=>staffSVG({clef,time:l.first?[res.meter,4]:null,items:l.items,slurs:l.slurs,minW,labels:REC.lab,alt:'Bản nhạc em vừa đàn'}));
+  let svgs=draw(0); const W=Math.max(...svgs.map(x=>+/viewBox="0 0 ([\d.]+)/.exec(x)[1])); svgs=draw(W);
+  $('#r-sheet').innerHTML=svgs.join('');
+  $('#r-info').textContent=`${segs.length} lần bấm · ${res.meter}/4 · khoảng ${Math.round(30/(res.u*REC.scale))} phách/phút`;
+}
+function recPlayStop(){ clearTimeout(REC.playT); REC.voices.forEach(v=>releaseVoice(v,true)); REC.voices=[]; const b=$('#r-play'); if(b) b.textContent='Nghe lại'; }
+function recPlay(){
+  if(REC.voices.length){ recPlayStop(); return; }
+  const res=REC.res; if(!res) return; const u=res.u*REC.scale, t0=audio().currentTime+0.15, segs=recSegs(res,REC.scale);
+  segs.forEach(sg=>sg.ms.forEach(m=>REC.voices.push(scheduleNote(m,t0+sg.q*u,(sg.e-sg.q)*u*0.95))));
+  $('#r-play').textContent='Dừng'; REC.playT=setTimeout(recPlayStop,(segs[segs.length-1].e*u+0.6)*1000);
+}
+function recSaved(){ return lsRead('pianoBanGhi',[]); }
+function recList(){
+  const L=recSaved();
+  $('#r-list').innerHTML=L.length?L.map((x,i)=>`<div class="row r-item"><b>${esc(x.ten)}</b><span class="muted">${x.n} nốt · ${x.res.meter}/4</span><button class="btn sm" data-open="${i}">Mở</button><button class="btn sm" data-del="${i}">Xoá</button></div>`).join(''):'<p class="muted">Chưa lưu bản nào.</p>';
+}
+function recSave(){
+  if(!REC.res) return; const L=recSaved(), d=new Date(), p2=x=>String(x).padStart(2,'0');
+  L.unshift({ten:`Bản ghi ${p2(d.getDate())}/${p2(d.getMonth()+1)} lúc ${p2(d.getHours())}:${p2(d.getMinutes())}`,n:REC.res.G.length,scale:REC.scale,res:REC.res});
+  lsWrite('pianoBanGhi',L.slice(0,12)); recList(); toast('Đã lưu bản nhạc.');
+}
+function bindRec(){
+  segBind('#r-mode',v=>{ REC.mode=v; $('#r-bpm-box').hidden=v!=='nhip'; });
+  segBind('#r-meter',v=>{ REC.meter=+v; if(REC.res&&!REC.on){ REC.res.meter=REC.meter; recRender(); } });
+  $('#r-bpm').addEventListener('input',e=>{ REC.bpm=+e.target.value; $('#r-bpm-v').textContent=REC.bpm; });
+  $('#r-go').addEventListener('click',()=>{ if(REC.on) recStop(); else recStart(); });
+  $('#r-play').addEventListener('click',recPlay);
+  $('#r-longer').addEventListener('click',()=>{ if(REC.scale>0.26){ REC.scale/=2; recPlayStop(); recRender(); } });
+  $('#r-shorter').addEventListener('click',()=>{ if(REC.scale<3.9){ REC.scale*=2; recPlayStop(); recRender(); } });
+  $('#r-lab').addEventListener('change',e=>{ REC.lab=e.target.checked; recRender(); });
+  $('#r-save').addEventListener('click',recSave);
+  $('#r-list').addEventListener('click',e=>{ const o=e.target.closest('[data-open]'), d=e.target.closest('[data-del]'), L=recSaved();
+    if(o){ const x=L[+o.dataset.open]; if(!x) return; recPlayStop(); REC.res=x.res; REC.scale=x.scale||1; REC.meter=x.res.meter; setSeg('#r-meter',REC.meter); recRender(); recUi(); $('#r-out').scrollIntoView({behavior:'smooth',block:'start'}); }
+    if(d&&confirm('Xoá bản ghi này?')){ L.splice(+d.dataset.del,1); lsWrite('pianoBanGhi',L); recList(); } });
+  window.addEventListener('resize',()=>{ if(REC.res&&curTab==='ghinhac') recRender(); });
+  recList(); recUi();
+}
+
 /* ---------- Thẻ ---------- */
-const TABS=['homnay','lotrinh','baile','lythuyet','docnot','hopam','nhip','nhatky','cayan'];
+const TABS=['homnay','lotrinh','baile','lythuyet','docnot','hopam','ghinhac','nhip','nhatky','cayan'];
 function setTab(t,noHash){
   if(!TABS.includes(t)) t='homnay';
   if(act&&curTab!==t) stopAll();
+  if(REC.on&&t!=='ghinhac') recStop();
   curTab=t;
   $$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t?'true':'false'));
   TABS.forEach(x=>$('#p-'+x).hidden=x!==t);
@@ -2421,9 +2612,9 @@ $('#t-open').addEventListener('click',()=>{ const l=curLesson(); setTab('lotrinh
 
 /* ---------- Khởi động ---------- */
 const _emit=emit;
-emit=function(m){ if(recorderHook&&curTab==='lotrinh'&&!(act&&act.kind==='practice')) recorderHook(m); _emit(m); };
+emit=function(m){ if(REC.on&&curTab==='ghinhac') recNote(m); if(recorderHook&&curTab==='lotrinh'&&!(act&&act.kind==='practice')) recorderHook(m); _emit(m); };
 $('#t-lt-open').addEventListener('click',e=>openTheory(+e.currentTarget.dataset.n||1));
-buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildSongs(); buildTheory(); buildChords(); bindFall(); bindMic(); bindMetro(); bindTimer(); bindLog(); buildChecks();
+buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildSongs(); buildTheory(); buildChords(); bindFall(); bindMic(); bindRec(); bindMetro(); bindTimer(); bindLog(); buildChecks();
 const lvSel=$('#g-level'); LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i;o.textContent=lv.ten;lvSel.appendChild(o);});
 lvSel.value=G.lv; lvSel.addEventListener('change',()=>setLevel(lvSel.value)); $('#g-reset').addEventListener('click',()=>setLevel(G.lv));
 renderAnswers(); nextQ(); renderGame();
