@@ -1595,6 +1595,13 @@ function rerenderRolls(){ players.forEach(p=>p.renderRoll()); }
 /* ---------- Bài lẻ: học trọn từng bài hát theo bước nhỏ ---------- */
 const HPB_RH='G3/0.5:1 G3/0.5:1 A3:2 G3:1 C4:4 B3/2:3 G3/0.5:1 G3/0.5:1 A3:2 G3:1 D4:5 C4/2:4 G3/0.5:1 G3/0.5:1 G4:5 E4:3 C4:1 B3:3 A3:2 F4/0.5:4 F4/0.5:4 E4:3 C4:1 D4:2 C4/3:1';
 const HPB_LH='-/1 C3/3:1 G2/3:4 G2/3:4 C3/3:1 C3/3:1 F2/3:5 C3/2:1 G2:4 C3/3:1';
+/* Hanon số 1: mỗi ô nhịp là tám nốt móc kép theo bậc 1 3 4 5 6 5 4 3 của gam Đô; ô sau cao hơn ô trước một bậc.
+   Tay phải bắt đầu ở Đô giữa (ngón 1 → 5 → 2), tay trái thấp hơn một quãng tám (ngón 5 → 1 → 4). */
+const HAN_NAMES=['C','D','E','F','G','A','B'], HAN_STEP=[0,2,3,4,5,4,3,2], HAN_FR=[1,2,3,4,5,4,3,2], HAN_FL=[5,4,3,2,1,2,3,4];
+function hanonBars(bars,hand){
+  const oct=hand==='R'?4:3, fing=hand==='R'?HAN_FR:HAN_FL;
+  return bars.map(k=>HAN_STEP.map((s,i)=>{ const d=k+s; return HAN_NAMES[d%7]+(oct+Math.floor(d/7))+'/0.25:'+fing[i]; }).join(' ')).join(' ');
+}
 const SONGS=[
  {id:'hpb',ten:'Happy Birthday',sub:'Chúc mừng sinh nhật · nhịp 3/4 · tay phải và tay trái',
   gioi:'Bài hát quen thuộc nhất để em đàn tặng người thân. Bài có bốn câu, mỗi câu bắt đầu bằng hai nốt ngắn đứng trước ô nhịp (phách đón).',
@@ -1636,7 +1643,32 @@ const SONGS=[
    {ten:'Biểu diễn cho cả nhà',sub:'nhịp 80',
     lam:['Tăng nhịp dần tới 80.','Mời cả nhà hát theo. Nhớ nghỉ một chút ở chữ "dear" để mọi người kịp hát tên.'],
     ex:[{ten:'Cả bài, hai tay',bpm:80,beats:3,pickup:1,rh:HPB_RH,lh:HPB_LH}],
-    dat:'Làm được khi cả nhà hát theo được em.'}]}
+    dat:'Làm được khi cả nhà hát theo được em.'}]},
+ {id:'han1',ten:'Luyện ngón: Hanon số 1',sub:'tám ô nhịp đi lên · hai tay cùng lúc · ngón đều và khỏe',
+  gioi:'Bài tập luyện ngón nổi tiếng của C. L. Hanon (sách The Virtuoso Pianist, số 1). Mỗi ô nhịp có tám nốt đều nhau; sang ô sau, cả hai tay cùng dời lên một nốt. Tập ngắn, mỗi buổi 3 phút là đủ.',
+  can:'Nên học sau bài 8 (tay trái và khóa Fa) và bài 12 (hai tay) của Lộ trình. Chỉ tập khi tay không mỏi; mỏi thì nghỉ ngay.',
+  cau:[],
+  buoc:[
+   {ten:'Ô nhịp đầu, tay phải',sub:'Đô Mi Fa Sol La Sol Fa Mi',
+    lam:['Đặt <b>ngón 1</b> lên Đô giữa. Năm ngón nằm trên Đô, Mi, Fa, Sol, La: ngón 1 Đô, ngón 2 Mi (bỏ qua Rê), ngón 3 Fa, ngón 4 Sol, ngón 5 La.','Bấm lên theo số ngón 1 2 3 4 5, rồi quay xuống 4 3 2. Mỗi ngón nhấc cao một chút rồi bấm đều.','Nhịp chậm: nốt nào cũng đều như tiếng mưa rơi, không nốt nào vội.'],
+    ex:[{ten:'Ô nhịp đầu, tay phải',bpm:40,beats:2,rh:hanonBars([0,0,0,0],'R')}]},
+   {ten:'Ô nhịp đầu, tay trái',sub:'cùng các nốt, thấp hơn một quãng tám',
+    lam:['Đặt <b>ngón 5</b> tay trái lên Đô thấp (thấp hơn Đô giữa một quãng tám). Ngón 4 trên Mi, ngón 3 trên Fa, ngón 2 trên Sol, ngón 1 trên La.','Đi lên theo số ngón 5 4 3 2 1, rồi quay xuống 2 3 4. Chú ý: số ngón tay trái đếm ngược so với tay phải.'],
+    ex:[{ten:'Ô nhịp đầu, tay trái',bpm:40,beats:2,lh:hanonBars([0,0,0,0],'L')}]},
+   {ten:'Hai tay cùng lúc, một ô nhịp',sub:'chậm và đều',
+    lam:['Hai tay đàn cùng lúc: tay phải đi 1 2 3 4 5 4 3 2, tay trái đi 5 4 3 2 1 2 3 4. Hai tay như hai chiếc gương.','Mỗi lần ngón 5 hoặc ngón 1 bấm lên đỉnh là lúc hai tay chạm đỉnh cùng nhau. Nếu rối, quay lại chọn <b>Tay phải</b> hoặc <b>Tay trái</b> trong khung tập.'],
+    ex:[{ten:'Hai tay, một ô nhịp',bpm:40,beats:2,rh:hanonBars([0,0,0,0],'R'),lh:hanonBars([0,0,0,0],'L')}],
+    dat:'Làm được khi hai tay đàn bốn lần liên tiếp mà hai tay luôn bấm cùng lúc.'},
+   {ten:'Hai ô nhịp: Đô rồi Rê',sub:'lần đầu dời tay lên một nốt',
+    lam:['Ô nhịp 2 giống ô nhịp 1, chỉ khác là mỗi ngón dời lên một nốt: ngón 1 sang Rê, ngón 2 sang Fa, ngón 3 sang Sol, ngón 4 sang La, ngón 5 sang Si.','Cả bàn tay trượt sang phải một nốt trắng. Nhìn trước vị trí mới trong lúc ngón cuối của ô nhịp trước còn đang bấm.'],
+    ex:[{ten:'Hai ô nhịp, hai tay',bpm:40,beats:2,rh:hanonBars([0,1,0,1],'R'),lh:hanonBars([0,1,0,1],'L')}]},
+   {ten:'Bốn ô nhịp đi lên',sub:'Đô, Rê, Mi, Fa',
+    lam:['Bàn tay trượt thêm hai nốt trắng nữa: ô nhịp 3 bắt đầu ở Mi, ô nhịp 4 ở Fa.','Tập từ từ. Chỗ dời tay là chỗ dễ vấp: giữ tay thả lỏng, không nâng cả cánh tay.'],
+    ex:[{ten:'Bốn ô nhịp đi lên',bpm:40,beats:2,rh:hanonBars([0,1,2,3],'R'),lh:hanonBars([0,1,2,3],'L')}]},
+   {ten:'Tám ô nhịp đi lên',sub:'từ Đô giữa lên tới Đô cao',
+    lam:['Đi tiếp sáu ô nhịp nữa: bàn tay tiến lên cao dần, ô nhịp cuối bắt đầu ở Đô cao.','Hai tay giữ nhịp đều. Khi tám ô nhịp trơn ở nhịp 40, tăng dần mỗi lần 4 nhịp.'],
+    ex:[{ten:'Tám ô nhịp đi lên',bpm:40,beats:2,rh:hanonBars([0,1,2,3,4,5,6,7],'R'),lh:hanonBars([0,1,2,3,4,5,6,7],'L')}],
+    dat:'Làm được khi em đàn trọn tám ô nhịp, hai tay đều nhau, ở nhịp 50.'}]}
 ];
 SONGS.forEach(sg=>{ sg.cau.forEach(c=>c.ev=parseVoice(c.v,'R')); sg.buoc.forEach(b=>b.exs=b.ex.map(buildEx)); });
 function songCur(sg){ const d=S.bl[sg.id]||{}; return sg.buoc.findIndex((b,i)=>!d[i]); }
@@ -1647,7 +1679,7 @@ function buildSongs(){
     const map=sg.cau.map(c=>`<div class="cau"><b>${esc(c.ten)}</b> <span class="loi">${esc(c.loi)}</span><div class="nfs">${c.ev.filter(e=>!e.rest).map(e=>`<span class="nf R">${esc(nm(e.notes[0],'sol'))}<small>${e.fing[0]?'ngón '+e.fing[0]:''}</small></span>`).join('')}</div></div>`).join('');
     d.innerHTML=`<summary><span class="lnum">♪</span><span class="ltitle">${esc(sg.ten)}<small>${esc(sg.sub)}</small></span><span data-chip></span></summary>
       <div class="lbody"><p>${esc(sg.gioi)}</p><p class="muted">${esc(sg.can)}</p>
-      <h3 style="margin:0">Bản đồ bài: bốn câu, tay phải</h3><div class="songmap">${map}</div>
+      ${sg.cau.length?`<h3 style="margin:0">Bản đồ bài: ${sg.cau.length} câu, tay phải</h3><div class="songmap">${map}</div>`:''}
       <h3 style="margin:0">Các bước</h3><div class="steps" data-steps></div></div>`;
     host.appendChild(d);
     const sh=$('[data-steps]',d);
