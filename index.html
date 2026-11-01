@@ -211,6 +211,24 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .stat span{font-size:.75rem;color:var(--muted)}
 .feedback{min-height:1.6em;font-weight:600}
 .feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+/* Bài tập giấy */
+.ws-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.ws-grid.viet{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.ws-cell{border:2px solid var(--line);border-radius:10px;padding:6px;background:var(--card);display:flex;flex-direction:column;gap:6px}
+.ws-cell.ok{border-color:var(--ok);background:var(--ok-soft)} .ws-cell.bad{border-color:var(--bad);background:var(--bad-soft)}
+.ws-cell select{width:100%}
+.ws-cell svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.ws-q{text-align:center;font-weight:700;font-size:1.05rem}
+.ws-ans{text-align:center;font-size:.85rem;color:var(--bad);min-height:1.2em}
+.ws-nudge{display:flex;gap:6px;justify-content:center}
+.ws-hit{fill:transparent;cursor:pointer}
+.ws-match{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px 16px;align-items:start}
+.ws-col{display:flex;flex-direction:column;gap:8px}
+.ws-it{border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);padding:6px;text-align:center;font-weight:600;min-height:52px;display:flex;align-items:center;justify-content:center}
+.ws-it.sel{outline:3px solid var(--felt);outline-offset:1px}
+.ws-it.p0{border-color:#3D6FB6} .ws-it.p1{border-color:#B7791F} .ws-it.p2{border-color:#7B4FA0} .ws-it.p3{border-color:#2E7A4E} .ws-it.p4{border-color:#B4462B}
+.ws-it.ok{background:var(--ok-soft)} .ws-it.bad{background:var(--bad-soft)}
+.ws-it svg{width:100%;height:auto;display:block;pointer-events:none;min-width:0!important;max-width:100%!important}
 
 /* Hợp âm */
 .chords{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
@@ -583,6 +601,21 @@ details.lesson.done .lnum.sq{background:var(--brass);border-color:var(--brass)}
       </div>
     </div>
     <div class="answers" id="g-ans"></div>
+  </div>
+  <div class="card" id="ws-card">
+    <div class="row" style="justify-content:space-between">
+      <h2>Bài tập giấy</h2>
+      <div class="seg" id="ws-kind" role="group" aria-label="Dạng bài">
+        <button data-v="dien" aria-pressed="true">Điền tên nốt</button><button data-v="viet" aria-pressed="false">Viết nốt</button><button data-v="noi" aria-pressed="false">Nối nốt</button><button data-v="phach" aria-pressed="false">Nối phách</button>
+      </div>
+    </div>
+    <p class="muted" id="ws-hint"></p>
+    <div id="ws-body"></div>
+    <div class="row">
+      <button class="btn pri" id="ws-check">Kiểm tra</button>
+      <button class="btn" id="ws-new">Bài mới</button>
+      <span class="feedback" id="ws-fb" role="status"></span>
+    </div>
   </div>
   <div class="card">
     <h3>Mẹo nhớ</h3>
@@ -1209,7 +1242,7 @@ function bindKeyboard(){
   });
   $('#kb-pedal').addEventListener('click',()=>setPedal(!pedal));
   $('#kb-hide').addEventListener('click',()=>{const d=$('#dock');d.classList.toggle('hide');$('#kb-hide').textContent=d.classList.contains('hide')?'Hiện đàn':'Thu gọn';fitDock()});
-  segBind('#kb-label',v=>{labelMode=v;lsWrite('pianoNhan',v);renderKeyLabels();rerenderRolls();renderAnswers();});
+  segBind('#kb-label',v=>{labelMode=v;lsWrite('pianoNhan',v);renderKeyLabels();rerenderRolls();renderAnswers();wsBuild();});
   setSeg('#kb-label',labelMode);
 }
 function fitDock(){document.body.style.paddingBottom=($('#dock').offsetHeight+18)+'px'}
@@ -1791,7 +1824,7 @@ function nextQ(){
   do{ it=items[Math.floor(Math.random()*items.length)]; }while(G.q&&items.length>1&&it.m===G.q.m);
   G.q=it; G.shown=performance.now(); G.lock=false; drawStaff(it);
 }
-function setLevel(v){ G.lv=+v; lsWrite('pianoMuc',G.lv); G.ok=G.bad=G.run=0; G.times=[]; G.q=null; nextQ(); renderGame(); $('#g-fb').textContent='Nốt này là nốt gì?'; $('#g-fb').className='feedback'; }
+function setLevel(v){ G.lv=+v; lsWrite('pianoMuc',G.lv); G.ok=G.bad=G.run=0; G.times=[]; G.q=null; nextQ(); renderGame(); $('#g-fb').textContent='Nốt này là nốt gì?'; $('#g-fb').className='feedback'; wsBuild(); }
 function renderGame(){
   $('#g-ok').textContent=G.ok; $('#g-bad').textContent=G.bad; $('#g-run').textContent=G.run;
   $('#g-avg').textContent=G.times.length?(G.times.slice(-20).reduce((a,b)=>a+b,0)/Math.min(20,G.times.length)/1000).toFixed(1):'–';
@@ -1818,6 +1851,107 @@ function gameMidi(m){ if(recorderHook&&curTab==='lotrinh') return; answer(m%12,m
 function renderAnswers(){
   const host=$('#g-ans'); host.innerHTML='';
   [0,2,4,5,7,9,11].forEach(pc=>{ const b=document.createElement('button'); b.textContent=labelMode==='abc'?ABC[pc]:SOL[pc]; b.addEventListener('click',()=>answer(pc,null)); host.appendChild(b); });
+}
+
+/* ---------- Bài tập giấy: bốn dạng bài theo giáo trình tập đọc nốt (điền tên, viết nốt, nối nốt, nối phách) ---------- */
+const WS={kind:'dien',cells:[],pairs:{},sel:null,L:[],R:[],order:[]};
+const WS_PCS=[0,2,4,5,7,9,11], WS_IDX=[0,0,1,1,2,3,3,4,4,5,5,6];
+const wsNote=m=>'CDEFGAB'[WS_IDX[m%12]]+(Math.floor(m/12)-1);
+const wsName=pc=>labelMode==='abc'?ABC[pc]:SOL[pc];
+const wsPick=a=>a[Math.floor(Math.random()*a.length)];
+function wsShuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const WS_HINT={
+  dien:'Nhìn từng nốt rồi chọn tên nốt bên dưới. Mức khóa nhạc và dải nốt theo ô Mức ở phần Đọc nốt phía trên.',
+  viet:'Đọc tên nốt rồi chạm vào khuông để đặt nốt, hoặc dùng nút ▲ ▼ để nhích từng bậc. Nốt cùng tên ở quãng tám nào cũng được.',
+  noi:'Chạm một khuông ở cột trái, rồi chạm dãy tên nốt đúng ở cột bên phải để nối. Mỗi khuông một dãy.',
+  phach:'Chạm một nốt ở cột trái, rồi chạm số phách đúng ở cột bên phải để nối.'
+};
+function wsBuild(){
+  const host=$('#ws-body'); host.innerHTML=''; WS.cells=[]; WS.pairs={}; WS.sel=null; WS.L=[]; WS.R=[];
+  $('#ws-fb').textContent=''; $('#ws-fb').className='feedback'; $('#ws-hint').textContent=WS_HINT[WS.kind];
+  ({dien:wsDien,viet:wsViet,noi:wsNoi,phach:wsPhach})[WS.kind](host);
+}
+function wsDien(host){
+  const items=LEVELS[G.lv].items, g=el('div','ws-grid'); host.appendChild(g);
+  for(let i=0;i<8;i++){
+    const it=wsPick(items), c=el('div','ws-cell');
+    c.innerHTML=staffSVG({clef:it.c,items:[{n:wsNote(it.m),d:'tron'}],labels:false,minW:96,alt:'Nốt cần gọi tên'})
+      +`<select aria-label="Tên nốt thứ ${i+1}"><option value="">?</option>${WS_PCS.map(pc=>`<option value="${pc}">${esc(wsName(pc))}</option>`).join('')}</select><div class="ws-ans"></div>`;
+    g.appendChild(c); WS.cells.push({c,pc:it.m%12,sel:$('select',c)});
+  }
+}
+function wsViet(host){
+  const items=LEVELS[G.lv].items, g=el('div','ws-grid viet'); host.appendChild(g);
+  for(let i=0;i<8;i++){
+    const it=wsPick(items), base=it.c==='G'?30:18, ds=items.filter(x=>x.c===it.c).map(x=>dn(x.m));
+    const cell={c:el('div','ws-cell'),it,base,lo:Math.min(...ds)-2,hi:Math.max(...ds)+2,pos:null,cls:''};
+    cell.c.innerHTML=`<div class="ws-q">${esc(wsName(it.m%12))}</div><svg class="stf" viewBox="0 0 130 120" role="img" aria-label="Khuông để đặt nốt ${esc(wsName(it.m%12))}"></svg>
+      <div class="ws-nudge"><button class="btn sm" type="button" data-d="1" aria-label="Lên một bậc">▲</button><button class="btn sm" type="button" data-d="-1" aria-label="Xuống một bậc">▼</button></div><div class="ws-ans"></div>`;
+    g.appendChild(cell.c); WS.cells.push(cell); wsDraw(cell);
+    const svg=$('svg',cell.c);
+    svg.addEventListener('click',e=>{ const r=svg.getBoundingClientRect(); const y=(e.clientY-r.top)*120/r.height; wsSet(cell,Math.round((80-y)/5)+cell.base); });
+    $$('.ws-nudge button',cell.c).forEach(b=>b.addEventListener('click',()=>wsSet(cell,cell.pos==null?cell.base+4:cell.pos+(+b.dataset.d))));
+  }
+}
+function wsSet(cell,v){ cell.pos=Math.max(cell.lo,Math.min(cell.hi,v)); cell.cls=''; cell.c.className='ws-cell'; $('.ws-ans',cell.c).textContent=''; wsDraw(cell); }
+function wsDraw(cell){
+  let h=''; for(let i=0;i<5;i++) h+=`<line class="ln" x1="6" x2="124" y1="${40+i*10}" y2="${40+i*10}"/>`;
+  h+=clefT(cell.it.c,40);
+  if(cell.pos!=null){
+    const y=80-(cell.pos-cell.base)*5, x=86;
+    for(let yy=90;yy<=y;yy+=10) h+=`<line class="ln" x1="${x-14}" x2="${x+14}" y1="${yy}" y2="${yy}"/>`;
+    for(let yy=30;yy>=y;yy-=10) h+=`<line class="ln" x1="${x-14}" x2="${x+14}" y1="${yy}" y2="${yy}"/>`;
+    h+=`<ellipse class="nh ${cell.cls}" cx="${x}" cy="${y}" rx="7.2" ry="4.9" transform="rotate(-18 ${x} ${y})"/>`;
+  }
+  $('svg',cell.c).innerHTML=h;
+}
+function wsNoi(host){
+  const all=LEVELS[G.lv].items, seqs=[], seen=new Set();
+  for(let tries=0;seqs.length<4&&tries<200;tries++){
+    const clef=wsPick(all).c, pool=all.filter(x=>x.c===clef), ns=[0,1,2,3,4].map(()=>wsPick(pool));
+    const txt=ns.map(n=>wsName(n.m%12)).join(' ');
+    if(seen.has(txt)||new Set(ns.map(n=>n.m)).size<3) continue;
+    seen.add(txt); seqs.push({clef,ns,txt});
+  }
+  wsMatch(host,seqs.map(s=>staffSVG({clef:s.clef,items:s.ns.map(n=>({n:wsNote(n.m),d:'tron'})),labels:false,tight:true,minW:200,alt:'Dãy nốt'})),seqs.map(s=>esc(s.txt)));
+}
+function wsPhach(host){
+  const pool=[{d:'tron',t:'4 phách'},{d:'trang',dot:true,t:'3 phách'},{d:'trang',t:'2 phách'},{d:'den',t:'1 phách'},{d:'moc',t:'½ phách'}], ch=wsShuffle(pool).slice(0,4);
+  wsMatch(host,ch.map(c=>staffSVG({clef:null,items:[{n:'B4',d:c.d,dot:c.dot}],labels:false,minW:70,alt:'Nốt cần nối với số phách'})),ch.map(c=>c.t));
+}
+/* lefts[i] nối với rights[i]; cột phải được xáo trộn */
+function wsMatch(host,lefts,rights){
+  const box=el('div','ws-match'), cl=el('div','ws-col'), cr=el('div','ws-col'); box.append(cl,cr); host.appendChild(box);
+  WS.order=wsShuffle(rights.map((_,i)=>i));
+  lefts.forEach((h,i)=>{ const b=el('button','ws-it',h); b.type='button'; b.addEventListener('click',()=>{ WS.sel=i; wsPaint(); }); cl.appendChild(b); WS.L.push(b); });
+  WS.order.forEach((ri,j)=>{ const b=el('button','ws-it',rights[ri]); b.type='button';
+    b.addEventListener('click',()=>{ if(WS.sel==null){ toast('Chạm một ô ở cột trái trước nhé.'); return; }
+      Object.keys(WS.pairs).forEach(k=>{ if(WS.pairs[k]===j) delete WS.pairs[k]; }); WS.pairs[WS.sel]=j; WS.sel=null; wsPaint(); });
+    cr.appendChild(b); WS.R.push(b); });
+}
+function wsPaint(){
+  const col=(b,k)=>{ b.className='ws-it'+(k!=null?' p'+(k%5):''); };
+  WS.L.forEach((b,i)=>{ col(b,WS.pairs[i]!=null?i:null); if(WS.sel===i) b.classList.add('sel'); });
+  WS.R.forEach((b,j)=>{ const k=Object.keys(WS.pairs).find(x=>WS.pairs[x]===j); col(b,k!=null?+k:null); });
+}
+function wsCheck(){
+  let ok=0, total=0, pending=0; const fb=$('#ws-fb');
+  if(WS.kind==='dien'){
+    WS.cells.forEach(x=>{ total++; const v=x.sel.value, good=v!==''&&+v===x.pc; if(good) ok++; x.c.className='ws-cell '+(good?'ok':'bad'); $('.ws-ans',x.c).textContent=good?'':(v===''?'Chưa chọn':'Đúng là '+wsName(x.pc)); });
+  } else if(WS.kind==='viet'){
+    WS.cells.forEach(x=>{ total++; const good=x.pos!=null&&x.pos%7===dn(x.it.m)%7; if(good) ok++; x.cls=good?'ok':'bad'; x.c.className='ws-cell '+x.cls; $('.ws-ans',x.c).textContent=good?'':(x.pos==null?'Chưa đặt nốt':'Nốt này là '+wsName(WS_PCS[x.pos%7])); wsDraw(x); });
+  } else {
+    WS.L.forEach((b,i)=>{ total++; const j=WS.pairs[i]; if(j==null){ pending++; b.classList.remove('ok','bad'); return; }
+      const good=WS.order[j]===i; if(good) ok++; b.classList.remove('ok','bad'); b.classList.add(good?'ok':'bad'); WS.R[j].classList.remove('ok','bad'); WS.R[j].classList.add(good?'ok':'bad'); });
+    if(pending){ fb.className='feedback bad'; fb.textContent='Em nối đủ cả '+total+' ô rồi hãy kiểm tra nhé.'; return; }
+  }
+  if(ok===total){ fb.className='feedback ok'; fb.textContent='Đúng hết rồi! '+ok+'/'+total; chime(); }
+  else { fb.className='feedback bad'; fb.textContent='Đúng '+ok+'/'+total+'. Các ô viền đỏ chưa đúng, em sửa rồi kiểm tra lại nhé.'; }
+}
+function wsBind(){
+  segBind('#ws-kind',v=>{ WS.kind=v; wsBuild(); });
+  $('#ws-new').addEventListener('click',wsBuild); $('#ws-check').addEventListener('click',wsCheck);
+  wsBuild();
 }
 
 /* ---------- Hợp âm ---------- */
@@ -3177,7 +3311,7 @@ $('#t-lt-open').addEventListener('click',e=>openTheory(+e.currentTarget.dataset.
 buildKeyboard(); buildHands(); bindKeyboard(); buildRoadmap(); buildSongs(); buildTheory(); buildChords(); bindFall(); bindMic(); bindCal(); bindMidi(); bindRec(); bindMetro(); bindTimer(); bindLog(); buildChecks(); bindDoc();
 const lvSel=$('#g-level'); LEVELS.forEach((lv,i)=>{const o=document.createElement('option');o.value=i;o.textContent=lv.ten;lvSel.appendChild(o);});
 lvSel.value=G.lv; lvSel.addEventListener('change',()=>setLevel(lvSel.value)); $('#g-reset').addEventListener('click',()=>setLevel(G.lv));
-renderAnswers(); nextQ(); renderGame();
+renderAnswers(); nextQ(); renderGame(); wsBind();
 renderAll(); renderChecks();
 setTab((location.hash||'').slice(1)||'homnay',true);
 fitDock(); window.addEventListener('resize',fitDock);
