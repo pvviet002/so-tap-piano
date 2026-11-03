@@ -1250,11 +1250,12 @@ function bindKeyboard(){
   window.addEventListener('keydown',e=>{
     if(typing()||e.ctrlKey||e.metaKey||e.altKey) return;
     if(tapActive&&(e.code==='Space'||e.code==='Enter')){ e.preventDefault(); if(!e.repeat) tapActive.tap(); return; }
+    if(F.on&&e.code==='Space'){ e.preventDefault(); if(!e.repeat) $('#fl-go').click(); return; }  // Nốt rơi: phím cách = Bắt đầu / Tạm dừng
     if(e.code==='Space'){ e.preventDefault(); if(!e.repeat) setPedal(true); return; }
     const m=CODE[e.code]; if(m==null) return; e.preventDefault(); if(e.repeat) return; noteOn(m); ensureVisible(m);
   });
   window.addEventListener('keyup',e=>{
-    if(e.code==='Space'){ if(!typing()) setPedal(false); return; }
+    if(e.code==='Space'){ if(!typing()){ if(F.on) e.preventDefault(); setPedal(false); } return; }
     const m=CODE[e.code]; if(m!=null) noteOff(m);
   });
   $('#kb-pedal').addEventListener('click',()=>setPedal(!pedal));
@@ -3280,7 +3281,7 @@ function fallGhost(){
 function openFall(ex){
   stopAll(); F.ex=ex; F.on=true;
   const d=$('#dock'); d.classList.add('stage'); d.classList.remove('hide'); $('#kb-hide').textContent='Thu gọn';
-  $('#stage-bar').hidden=false; $('#fall').hidden=false;
+  $('#stage-bar').hidden=false; $('#fall').hidden=false; keysHint();
   const fi=FALL_EX.findIndex(x=>x.ex===ex); $('#fl-song').value=String(fi);
   $('#fl-prev').disabled=fi<=0; $('#fl-next').disabled=fi<0||fi>=FALL_EX.length-1;
   F.bpm=Math.max(30,Math.round(ex.bpm*0.8)); $('#fl-bpm').value=F.bpm; $('#fl-bpm-v').textContent=F.bpm;
@@ -3289,7 +3290,8 @@ function openFall(ex){
   if(!F.raf){ F.last=0; F.raf=requestAnimationFrame(fallLoop); }
 }
 function fallStep(d){ const i=FALL_EX.findIndex(x=>x.ex===F.ex)+d; if(i<0||i>=FALL_EX.length) return; openFall(FALL_EX[i].ex); }
-function closeFall(){ if(!F.on) return; F.on=false; F.run=false; HP.R=HP.L=null; GHOST.R=GHOST.L=null; setHints(new Set()); $('#stage-bar').hidden=true; $('#fall').hidden=true; $('#dock').classList.remove('stage'); handbarSync(); fitDock(); }
+function keysHint(){ const h=$('.keys-hint'); if(!h) return; if(!h.dataset.goc) h.dataset.goc=h.textContent; h.textContent=F.on?h.dataset.goc.replace('phím cách = pedal','phím cách = Bắt đầu / Tạm dừng nốt rơi (pedal: bấm nút Pedal ngân)'):h.dataset.goc; }
+function closeFall(){ if(!F.on) return; F.on=false; keysHint(); F.run=false; HP.R=HP.L=null; GHOST.R=GHOST.L=null; setHints(new Set()); $('#stage-bar').hidden=true; $('#fall').hidden=true; $('#dock').classList.remove('stage'); handbarSync(); fitDock(); }
 function fallUi(){
   $('#fl-go').textContent=F.run?'Tạm dừng':F.done?'Chơi lại từ đầu':F.now>-F.ci+0.001?'Tiếp tục':'Bắt đầu';
   $('#fl-sound-l').hidden=F.mode!=='that';
@@ -3411,6 +3413,7 @@ function bindFall(){
   $('#fl-bpm').addEventListener('input',e=>{ F.bpm=+e.target.value; $('#fl-bpm-v').textContent=F.bpm; });
   $('#fl-metro').addEventListener('change',e=>F.metro=e.target.checked);
   $('#fl-sound').addEventListener('change',e=>F.sound=e.target.checked);
+  $('#fl-go').title='Phím tắt: phím cách (Space)';
   $('#fl-go').addEventListener('click',()=>{ audio();
     if(F.done) fallReset();
     if(F.run) F.run=false; else { if(F.now<=-F.ci+0.001) click(audio().currentTime,true); F.run=true; F.last=0; }
