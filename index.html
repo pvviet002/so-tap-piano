@@ -1021,15 +1021,18 @@ const WHITE=new Set([0,2,4,5,7,9,11]);
 function midi(s){const m=/^([A-G])([#b]?)(\d)$/.exec(s);if(!m)throw new Error('Nốt sai: '+s);return (+m[3]+1)*12+PC[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0)}
 let labelMode=lsRead('pianoNhan','sol'), chuDoc=lsRead('pianoChuDoc',true)!==false;
 function nm(m,mode){mode=mode||labelMode;const pc=m%12,o=Math.floor(m/12)-1;return mode==='abc'?ABC[pc]+o:SOL[pc]}
-// chỉ khi chơi Nốt rơi: tên nốt mang dấu thanh theo độ cao trong câu. Nốt thấp nhất của câu dấu huyền (Sòl),
-// nốt cao nhất dấu sắc (Sól), nốt ở giữa không dấu (Sol). Một câu = 2 ô nhịp, tính riêng từng tay.
-// Độ cao h = vị trí trong khoảng thấp nhất → cao nhất của câu: h ≤ 0.25 dấu huyền, h ≥ 0.9 dấu sắc
-// (khớp ba câu thầy viết: Sòl Sòl La Sòl Đố Si / … Rế Đô / Sòl Sòl Sól Mi Đô Si Là).
+// chỉ khi chơi Nốt rơi: tên nốt mang dấu thanh theo độ cao khi hát, như thanh điệu tiếng Việt.
+// Mỗi nốt so với các nốt quanh nó cùng tay (trước 2 phách, sau 2 phách), không cần chia câu:
+// h = vị trí trong khoảng thấp nhất → cao nhất của cửa sổ đó. h ≤ 0.2 dấu huyền (Sòl), h ≥ 0.9 dấu sắc (Sól),
+// giữa thì không dấu (Sol). Khớp 19/19 nốt ba câu thầy viết (Sòl Sòl La Sòl Đố Si / … Rế Đô / Sòl Sòl Sól Mi Đô Si Là).
 const TONE={'Đô':['Đồ','Đố'],'Rê':['Rề','Rế'],'Mi':['Mì','Mí'],'Fa':['Fà','Fá'],'Sol':['Sòl','Sól'],'La':['Là','Lá'],'Si':['Sì','Sí']};
 function fallTones(ex){
-  const g=2*ex.beats, key=e=>e.hand+'|'+Math.floor((e.t+1e-6)/g), rng=new Map(), map=new Map();
-  ex.events.forEach(e=>{ if(e.rest) return; const o=rng.get(key(e))||{lo:999,hi:-1}; e.notes.forEach(m=>{ o.lo=Math.min(o.lo,m); o.hi=Math.max(o.hi,m); }); rng.set(key(e),o); });
-  ex.events.forEach(e=>{ if(e.rest) return; const o=rng.get(key(e)); e.notes.forEach(m=>{ const h=o.hi>o.lo?(m-o.lo)/(o.hi-o.lo):0.5; map.set(e.hand+'|'+e.t.toFixed(4)+'|'+m,h<=0.25?-1:h>=0.9?1:0); } ); });
+  const map=new Map(), ev=ex.events.filter(e=>!e.rest);
+  ev.forEach(e=>{
+    let lo=999, hi=-1;
+    ev.forEach(x=>{ if(x.hand!==e.hand||x.t<e.t-2-1e-6||x.t>e.t+2+1e-6) return; x.notes.forEach(m=>{ lo=Math.min(lo,m); hi=Math.max(hi,m); }); });
+    e.notes.forEach(m=>{ const h=hi>lo?(m-lo)/(hi-lo):0.5; map.set(e.hand+'|'+e.t.toFixed(4)+'|'+m,h<=0.2?-1:h>=0.9?1:0); });
+  });
   return map;
 }
 function nmFall(m,hand,t){
