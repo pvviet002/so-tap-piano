@@ -1021,8 +1021,19 @@ const WHITE=new Set([0,2,4,5,7,9,11]);
 function midi(s){const m=/^([A-G])([#b]?)(\d)$/.exec(s);if(!m)throw new Error('Nốt sai: '+s);return (+m[3]+1)*12+PC[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0)}
 let labelMode=lsRead('pianoNhan','sol'), chuDoc=lsRead('pianoChuDoc',true)!==false;
 function nm(m,mode){mode=mode||labelMode;const pc=m%12,o=Math.floor(m/12)-1;return mode==='abc'?ABC[pc]+o:SOL[pc]}
-// chỉ khi chơi Nốt rơi: viết "Sòl" theo cách đọc, để dễ phân biệt với các nốt khác
-const sol2=s=>s.replace(/Sol/g,'Sòl'), nmFall=m=>sol2(nm(m,'sol'));
+// chỉ khi chơi Nốt rơi: tên nốt mang dấu thanh theo độ cao trong câu. Nốt thấp nhất của câu dấu huyền (Sòl),
+// nốt cao nhất dấu sắc (Sól), nốt ở giữa không dấu (Sol). Một câu = 2 ô nhịp, tính riêng từng tay.
+const TONE={'Đô':['Đồ','Đố'],'Rê':['Rề','Rế'],'Mi':['Mì','Mí'],'Fa':['Fà','Fá'],'Sol':['Sòl','Sól'],'La':['Là','Lá'],'Si':['Sì','Sí']};
+function fallTones(ex){
+  const g=2*ex.beats, key=e=>e.hand+'|'+Math.floor((e.t+1e-6)/g), rng=new Map(), map=new Map();
+  ex.events.forEach(e=>{ if(e.rest) return; const o=rng.get(key(e))||{lo:999,hi:-1}; e.notes.forEach(m=>{ o.lo=Math.min(o.lo,m); o.hi=Math.max(o.hi,m); }); rng.set(key(e),o); });
+  ex.events.forEach(e=>{ if(e.rest) return; const o=rng.get(key(e)); e.notes.forEach(m=>map.set(e.hand+'|'+e.t.toFixed(4)+'|'+m,o.lo===o.hi?0:m===o.lo?-1:m===o.hi?1:0)); });
+  return map;
+}
+function nmFall(m,hand,t){
+  const base=SOL[m%12], k=(F.tone&&F.tone.get(hand+'|'+(+t).toFixed(4)+'|'+m))||0;
+  return k?base.replace(/^(Đô|Rê|Mi|Fa|Sol|La|Si)/,x=>TONE[x][k>0?1:0]):base;
+}
 function nmShort(m){return labelMode==='abc'?ABC[m%12]+(Math.floor(m/12)-1):SOL[m%12]}
 
 /* ---------- Âm thanh ---------- */
@@ -1206,7 +1217,7 @@ function qDraw(){
   if(key===Q.key) return; Q.key=key;
   const hands=new Set(Q.evs.filter(e=>!e.rest).map(e=>e.hand));
   ['R','L'].forEach(h=>{ $('#qrow-'+h).hidden=!hands.has(h);
-    $('#q-'+h).innerHTML=per[h].length?per[h].map((e,i)=>`<div class="qc${i?'':' first'}${i===0&&nowOf(h)?' now':''}" style="opacity:${i?Math.max(.3,1-i*.16):1}"><b>${e.notes.map(m=>esc(F.on?nmFall(m):nm(m,'sol'))).join('·')}</b><small>${e.fing.some(Boolean)?'ngón '+e.fing.join('·'):'&nbsp;'}</small></div>`).join(''):'<span class="qend">hết bài</span>'; });
+    $('#q-'+h).innerHTML=per[h].length?per[h].map((e,i)=>`<div class="qc${i?'':' first'}${i===0&&nowOf(h)?' now':''}" style="opacity:${i?Math.max(.3,1-i*.16):1}"><b>${e.notes.map(m=>esc(F.on?nmFall(m,e.hand,e.t):nm(m,'sol'))).join('·')}</b><small>${e.fing.some(Boolean)?'ngón '+e.fing.join('·'):'&nbsp;'}</small></div>`).join(''):'<span class="qend">hết bài</span>'; });
 }
 const FING=new Map(); // phím -> {m, hand, f}
 const evFing=e=>e.hand?e.notes.map((m,k)=>({m,hand:e.hand,f:e.fing[k]||''})):[];
@@ -3254,7 +3265,7 @@ function setHints(s){ F.hints.forEach(m=>{ if(!s.has(m)){ const k=keyEls.get(m);
 function fallSel(e){ return F.filter==='all'||e.hand===F.filter; }
 function fallReset(){
   const ex=F.ex; F.run=false; F.done=false; F.wait=false; F.err=0; F.ok=0; F.perfect=0; F.si=0; F.got=new Set(); F.ai=0; F.fx=[]; F.result=null; F.last=0;
-  F.ci=ex.beats===8?4:ex.beats; F.now=-F.ci; F.notes=[]; F.req=[];
+  F.ci=ex.beats===8?4:ex.beats; F.now=-F.ci; F.notes=[]; F.req=[]; F.tone=fallTones(ex);
   ex.events.forEach(e=>{ if(e.rest) return; const sel=fallSel(e), req=F.mode!=='that'&&sel;
     e.notes.forEach((m,k)=>{ const n={t:e.t,d:e.d,m,f:e.fing[k]||'',hand:e.hand,sel,r:null}; if(req){ n.r={t:e.t,m,st:0,hand:e.hand,f:e.fing[k]||''}; F.req.push(n.r); } F.notes.push(n); }); });
   F.auto=ex.events.filter(e=>!e.rest&&(F.mode==='that'||!fallSel(e))).sort((a,b)=>a.t-b.t);
@@ -3301,7 +3312,7 @@ function fallUi(){
   if(F.mode==='cho'){ const s=F.steps[F.si];
     let need='';
     if(F.wait&&s){ const P={R:[],L:[]}; s.req.filter(r=>!F.got.has(r.m)).forEach(r=>{ const n=F.notes.find(x=>x.r===r); P[n.hand].push(n); });
-      need=['R','L'].filter(h=>P[h].length).map(h=>{ const ns=P[h].sort((a,b)=>a.m-b.m), fs=ns.map(n=>n.f).filter(Boolean); return `${h==='R'?'Tay phải':'Tay trái'}: ${ns.map(n=>nmFall(n.m)).join(' ')}${fs.length?' (ngón '+fs.join('-')+')':''}`; }).join(' · ')+' — '; }
+      need=['R','L'].filter(h=>P[h].length).map(h=>{ const ns=P[h].sort((a,b)=>a.m-b.m), fs=ns.map(n=>n.f).filter(Boolean); return `${h==='R'?'Tay phải':'Tay trái'}: ${ns.map(n=>nmFall(n.m,n.hand,n.t)).join(' ')}${fs.length?' (ngón '+fs.join('-')+')':''}`; }).join(' · ')+' — '; }
     const s2=F.steps[F.si+1], tay=x=>(x.hand==='R'?'tay phải':'tay trái')+' sang '+(x.dir>0?'phải':'trái'), at=t=>(F.shifts||[]).filter(x=>Math.abs(x.t-t)<1e-6);
     const mv=(s?at(s.t).map(x=>'Dời '+tay(x)+'! ').join(''):'')+(s2?at(s2.t).map(x=>'Sắp dời '+tay(x)+'. ').join(''):'');
     st.textContent=mv+need+`đúng ${F.ok}/${F.req.length} · sai ${F.err}`; }
@@ -3371,7 +3382,7 @@ function fallDraw(){
     const vTop=Math.max(top,0), vBot=Math.min(top+h,H), vh=vBot-vTop; // chỉ ghi chữ trong phần khối đang thấy
     if(n.sel&&vh>18&&rw>13){ x.fillStyle=C.card; x.textAlign='center'; x.textBaseline='alphabetic';
       const fs=Math.max(9,Math.min(13,rw*0.4)); x.font=`600 ${fs}px "Be Vietnam Pro", sans-serif`;
-      x.fillText(labelMode==='abc'?ABC[n.m%12]:sol2(SOL[n.m%12]),rx+rw/2,vBot-5);
+      x.fillText(labelMode==='abc'?ABC[n.m%12]:nmFall(n.m,n.hand,n.t),rx+rw/2,vBot-5);
       if(n.f&&vh>38){ x.font=`700 ${fs+1}px "Be Vietnam Pro", sans-serif`; x.fillText(n.f,rx+rw/2,vBot-5-fs-5); } }
   });
   x.globalAlpha=1;
