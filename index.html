@@ -185,6 +185,21 @@ details.lesson.cur .lnum{border-color:var(--felt);color:var(--felt)}
 .blk .f{display:block;color:var(--muted);font-size:.72rem;font-variant-numeric:tabular-nums}
 .blk.now{outline:2px solid var(--ink);outline-offset:-1px}
 .blk.mute{opacity:.3}
+.rd{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.rd[hidden]{display:none}
+.rd-row{display:flex;gap:8px;align-items:baseline}
+.rd-hand{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;min-width:3.4em;flex:none}
+.rd-line{display:flex;flex-wrap:wrap;gap:4px 0;font-size:1.05rem;line-height:1.55;min-width:0}
+.rd-bar{display:inline-flex;flex-wrap:wrap;gap:0 .55em;padding:0 .6em;border-left:1px solid var(--line)}
+.rd-bar:first-child{border-left:0;padding-left:0}
+.rd .w{white-space:nowrap;padding:0 3px;border-radius:4px}
+.rd .w.now{background:var(--ink);color:var(--card)}
+.rd .w .lo{text-decoration:underline dotted;text-decoration-thickness:2px;text-underline-offset:4px}
+.rd .w .hi{text-decoration:overline dotted;text-decoration-thickness:2px}
+.rd .w.rs,.rd .w .dsh{color:var(--muted)}
+.rd .w.rs{font-size:.82em}
+.rd .w.now.rs,.rd .w.now .dsh{color:inherit}
+.rd-note{font-size:.76rem;color:var(--muted)}
 .blk.rest{background:transparent;border:1px dashed var(--line);color:var(--muted)}
 .roll .lab{position:absolute;left:4px;font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -1004,7 +1019,7 @@ const SOL=['Đô','Đô♯','Rê','Rê♯','Mi','Fa','Fa♯','Sol','Sol♯','La'
 const ABC=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const WHITE=new Set([0,2,4,5,7,9,11]);
 function midi(s){const m=/^([A-G])([#b]?)(\d)$/.exec(s);if(!m)throw new Error('Nốt sai: '+s);return (+m[3]+1)*12+PC[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0)}
-let labelMode=lsRead('pianoNhan','sol');
+let labelMode=lsRead('pianoNhan','sol'), chuDoc=lsRead('pianoChuDoc',true)!==false;
 function nm(m,mode){mode=mode||labelMode;const pc=m%12,o=Math.floor(m/12)-1;return mode==='abc'?ABC[pc]+o:SOL[pc]}
 function nmShort(m){return labelMode==='abc'?ABC[m%12]+(Math.floor(m/12)-1):SOL[m%12]}
 
@@ -1521,7 +1536,7 @@ function stopAll(msg){
   if(!act) return; const a=act; act=null;
   a.timeouts.forEach(clearTimeout); a.voices.forEach(v=>releaseVoice(v,true));
   $$('.k.hint,.k.play').forEach(k=>k.classList.remove('hint','play')); HP.R=HP.L=null; fingSet([]);
-  if(a.player){ $$('.blk.now',a.player.root).forEach(b=>b.classList.remove('now')); a.player.setStatus(msg||''); a.player.syncButtons(); }
+  if(a.player){ $$('.blk.now,.rd .w.now',a.player.root).forEach(b=>b.classList.remove('now')); a.player.setStatus(msg||''); a.player.syncButtons(); }
   if(a.onStop) a.onStop();
 }
 function runEvents(events,bpm,o){
@@ -1554,10 +1569,13 @@ function makePlayer(ex,host){
      ${two?'<div class="seg" data-a="hand" role="group" aria-label="Chọn tay"><button data-v="all" aria-pressed="true">Hai tay</button><button data-v="R" aria-pressed="false">Tay phải</button><button data-v="L" aria-pressed="false">Tay trái</button></div>':''}
    </div>
    <div class="ctrls"><label class="tempo">Nhịp <input type="range" min="40" max="140" value="${ex.bpm}" aria-label="Tốc độ"><span class="num">${ex.bpm}</span></label>
-     <label class="tempo"><input type="checkbox"> gõ nhịp khi nghe</label></div>
-   <div class="status"></div><div class="roll"><div class="roll-in"></div></div>`;
+     <label class="tempo"><input type="checkbox"> gõ nhịp khi nghe</label>
+     <label class="tempo"><input type="checkbox" data-a="chudoc"> chữ đọc nốt</label></div>
+   <div class="status"></div><div class="roll"><div class="roll-in"></div></div>
+   <div class="rd" hidden></div>`;
   host.appendChild(root);
-  const st=$('.status',root), rng=$('input[type=range]',root), chk=$('input[type=checkbox]',root);
+  const st=$('.status',root), rng=$('input[type=range]',root), chk=$('input[type=checkbox]',root), cdChk=$('[data-a=chudoc]',root);
+  cdChk.addEventListener('change',()=>{ chuDoc=cdChk.checked; lsWrite('pianoChuDoc',chuDoc); players.forEach(q=>q.renderRead()); });
   p.setStatus=(m,good)=>{st.textContent=m;st.classList.toggle('good',!!good)};
   p.syncButtons=()=>{ const mine=act&&act.player===p; $('[data-a=dung]',root).disabled=!mine; $('[data-a=nghe]',root).disabled=!!mine; $('[data-a=tap]',root).disabled=!!mine; };
   rng.addEventListener('input',()=>{p.bpm=+rng.value; rng.nextElementSibling.textContent=rng.value;});
@@ -1584,11 +1602,41 @@ function makePlayer(ex,host){
       const mute=p.filter!=='all'&&e.hand!==p.filter?' mute':'';
       h+=`<div class="blk ${e.hand}${mute}" data-i="${i}" style="left:${left}px;width:${w}px;top:${top}px" title="${esc(e.notes.map(m=>nm(m,'sol')+' / '+nm(m,'abc')).join(', '))}${fg?' · ngón '+fg:''}">${esc(name)}<span class="f">${fg?(w>=58?'ngón ':'')+fg:''}</span></div>`;
     });
-    inn.innerHTML=h;
+    inn.innerHTML=h; p.renderRead();
+  };
+  // Chữ đọc nốt: tên nốt viết thành dòng, chia theo ô nhịp (Sol Sol La Sol Đô Si), để đọc lên hoặc hát theo
+  p.rdEls=new Map();
+  p.renderRead=()=>{
+    const box=$('.rd',root); cdChk.checked=chuDoc; p.rdEls=new Map(); box.hidden=!chuDoc; if(!chuDoc){ box.innerHTML=''; return; }
+    const hands=['R','L'].filter(hd=>ex.hands.includes(hd)&&(p.filter==='all'||p.filter===hd)), nameHand={R:'Tay phải',L:'Tay trái'};
+    const pcName=m=>labelMode==='abc'?ABC[m%12]:SOL[m%12];
+    let h='';
+    hands.forEach(hd=>{
+      const by=[];
+      ex.events.filter(e=>e.hand===hd).sort((a,b)=>a.t-b.t).forEach(e=>{ const l=by[by.length-1];
+        if(l&&Math.abs(l.t-e.t)<1e-6){ l.d=Math.max(l.d,e.d); l.notes=l.notes.concat(e.notes); l.rest=l.rest&&!!e.rest; l.src.push(e); }
+        else by.push({t:e.t,d:e.d,notes:e.notes.slice(),rest:!!e.rest,src:[e]}); });
+      const bars=new Map();
+      by.forEach((g,i)=>{
+        const nx=by[i+1], free=!nx||nx.t>=g.t+g.d-1e-6, dash=free?Math.min(3,Math.floor(g.d+1e-6)-1):0;
+        const key=g.t<ex.pickup-1e-6?-1:Math.floor((g.t-ex.pickup+1e-6)/ex.beats);
+        const id='w'+hd+i;
+        const inner=g.rest?(g.d>=1?'nghỉ':'·'):g.notes.map(m=>`<span class="${m<60?'lo':m>=72?'hi':''}">${esc(pcName(m))}</span>`).join('+');
+        const d=dash>0&&!g.rest?` <span class="dsh">${'–'.repeat(dash).split('').join(' ')}</span>`:'';
+        (bars.get(key)||bars.set(key,[]).get(key)).push(`<span class="w${g.rest?' rs':''}" data-id="${id}">${inner}${d}</span>`);
+        g.id=id; g.hd=hd;
+      });
+      h+=`<div class="rd-row">${hands.length>1?`<b class="rd-hand">${nameHand[hd]}</b>`:''}<div class="rd-line">${[...bars.keys()].sort((a,b)=>a-b).map(k=>`<span class="rd-bar">${bars.get(k).join('')}</span>`).join('')}</div></div>`;
+      p.rdBy=(p.rdBy||[]).concat(by);
+    });
+    h+='<div class="rd-note">Gạch chân chấm: nốt thấp hơn Đô giữa. Gạch trên chấm: nốt cao hơn một quãng tám. Dấu – là ngân thêm một phách.</div>';
+    box.innerHTML=h;
+    (p.rdBy||[]).forEach(g=>{ const el=box.querySelector(`[data-id="${g.id}"]`); if(el) g.src.forEach(e=>p.rdEls.set(e,el)); });
+    p.rdBy=[];
   };
   const roll=$('.roll',root);
   const scrollTo=t=>{const x=8+t*p.px; if(x<roll.scrollLeft+20||x>roll.scrollLeft+roll.clientWidth-90) roll.scrollLeft=Math.max(0,x-40);};
-  const mark=(e,on)=>{const i=ex.events.indexOf(e); const b=$(`.blk[data-i="${i}"]`,root); if(b) b.classList.toggle('now',on); if(on) scrollTo(e.t);};
+  const mark=(e,on)=>{const i=ex.events.indexOf(e); const b=$(`.blk[data-i="${i}"]`,root); if(b) b.classList.toggle('now',on); const w=p.rdEls.get(e); if(w) w.classList.toggle('now',on); if(on) scrollTo(e.t);};
   $('[data-a=nghe]',root).addEventListener('click',()=>{
     stopAll(); const evs=p.evs(); if(!evs.length) return;
     runEvents(evs,p.bpm,{player:p,countIn:true,beats:ex.beats===8?4:ex.beats,metro:p.metro,pickup:ex.pickup,onEvent:mark,onEnd:()=>{p.setStatus('Nghe xong. Bấm Tập theo để tự chơi trên đàn ảo, hoặc chơi trên đàn thật.');p.syncButtons();}});
@@ -1605,7 +1653,7 @@ function makePlayer(ex,host){
     const st={kind:'practice',timeouts:[],voices:[],player:p,i:0,got:new Set(),err:0};
     st.expect=()=>steps[st.i]?[...steps[st.i].req].filter(m=>!st.got.has(m)):[];
     const show=()=>{
-      $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now'));
+      $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now,.rd .w.now',root).forEach(b=>b.classList.remove('now'));
       const s=steps[st.i]; s.req.forEach(m=>{const k=keyEls.get(m); if(k) k.classList.add('hint');}); ensureVisible([...s.req][0]);
       s.es.forEach(e=>mark(e,true)); fingSet(s.es.flatMap(evFing)); Q.key=''; qSet(evs,s.t,1e-6);
       const fg=s.es.flatMap(e=>e.fing); p.setStatus(`Bước ${st.i+1}/${steps.length}: bấm ${[...s.req].map(m=>nm(m,'sol')).join(' + ')}${fg.length?' (ngón '+fg.join('·')+')':''} · sai ${st.err}`);
@@ -1614,7 +1662,7 @@ function makePlayer(ex,host){
       const s=steps[st.i];
       if(s.req.has(m)){ st.got.add(m); const k=keyEls.get(m); if(k) k.classList.remove('hint'); fingDel([m]);
         if([...s.req].every(x=>st.got.has(x))){ st.got=new Set(); st.i++;
-          if(st.i>=steps.length){ const e=st.err; act=null; HP.R=HP.L=null; fingSet([]); $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now',root).forEach(b=>b.classList.remove('now')); p.syncButtons();
+          if(st.i>=steps.length){ const e=st.err; act=null; HP.R=HP.L=null; fingSet([]); $$('.k.hint').forEach(k=>k.classList.remove('hint')); $$('.blk.now,.rd .w.now',root).forEach(b=>b.classList.remove('now')); p.syncButtons();
             p.setStatus(e===0?'Xuất sắc! Không sai nốt nào. Thử tăng tốc độ hoặc chơi trên đàn thật.':`Xong cả bài, sai ${e} nốt. Chơi lại một lần nữa nhé.`, e===0); if(e===0) chime(); return; }
           show(); }
       } else { st.err++; flashKey(m,'bad'); s.req.forEach(x=>flashKey(x,'good',500)); show(); }
